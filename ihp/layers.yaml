@@ -97,11 +97,6 @@ LayerViews:
     valid: false
     width: 1
     color: "#bf4026"
-  GatPolyfiller:
-    layer: [5, 22]
-    hatch_pattern: dagger
-    width: 1
-    color: "#bf4026"
   GatPolynofill:
     layer: [5, 23]
     hatch_pattern: hollow
@@ -307,11 +302,6 @@ LayerViews:
     hatch_pattern: m1
     width: 1
     color: "#39bfff"
-  Metal1filler:
-    layer: [8, 22]
-    hatch_pattern: m1
-    width: 1
-    color: "#39bfff"
   Metal1nofill:
     layer: [8, 23]
     hatch_pattern: hollow
@@ -405,11 +395,6 @@ LayerViews:
     hatch_pattern: m2
     width: 1
     color: "#ccccd9"
-  Metal2filler:
-    layer: [10, 22]
-    hatch_pattern: m2
-    width: 1
-    color: "#ccccd9"
   Metal2nofill:
     layer: [10, 23]
     hatch_pattern: hollow
@@ -500,11 +485,6 @@ LayerViews:
     color: "#d80000"
   Metal3mask:
     layer: [30, 20]
-    hatch_pattern: m3
-    width: 1
-    color: "#d80000"
-  Metal3filler:
-    layer: [30, 22]
     hatch_pattern: m3
     width: 1
     color: "#d80000"
@@ -624,11 +604,6 @@ LayerViews:
     hatch_pattern: m4
     width: 1
     color: "#93e837"
-  Metal4filler:
-    layer: [50, 22]
-    hatch_pattern: m4
-    width: 1
-    color: "#93e837"
   Metal4nofill:
     layer: [50, 23]
     hatch_pattern: hollow
@@ -719,11 +694,6 @@ LayerViews:
     color: "#dcd146"
   Metal5mask:
     layer: [67, 20]
-    hatch_pattern: m5
-    width: 1
-    color: "#dcd146"
-  Metal5filler:
-    layer: [67, 22]
     hatch_pattern: m5
     width: 1
     color: "#dcd146"
@@ -819,11 +789,6 @@ LayerViews:
     hatch_pattern: tm1
     width: 1
     color: "#ffe6bf"
-  TopMetal1filler:
-    layer: [126, 22]
-    hatch_pattern: tm1
-    width: 1
-    color: "#ffe6bf"
   TopMetal1nofill:
     layer: [126, 23]
     hatch_pattern: hollow
@@ -907,11 +872,6 @@ LayerViews:
   TopMetal2mask:
     layer: [134, 20]
     hatch_pattern: tm2
-    width: 1
-    color: "#ff8000"
-  TopMetal2filler:
-    layer: [134, 22]
-    hatch_pattern: m1
     width: 1
     color: "#ff8000"
   TopMetal2nofill:
@@ -1482,11 +1442,6 @@ LayerViews:
     valid: false
     width: 1
     color: "#ffe6bf"
-  BackMetal1filler:
-    layer: [20, 22]
-    hatch_pattern: hollow
-    width: 1
-    color: "#ffe6bf"
   BackMetal1nofill:
     layer: [20, 23]
     hatch_pattern: tm1
@@ -1703,12 +1658,6 @@ LayerViews:
     valid: false
     width: 1
     color: "#d80000"
-  SiWGfiller:
-    layer: [86, 22]
-    hatch_pattern: stipple12
-    valid: false
-    width: 1
-    color: "#d80000"
   SiWGnofill:
     layer: [86, 23]
     hatch_pattern: hollow
@@ -1745,12 +1694,6 @@ LayerViews:
     valid: false
     width: 1
     color: "#00b300"
-  GraphMetal1filler:
-    layer: [109, 22]
-    hatch_pattern: m5
-    valid: false
-    width: 1
-    color: "#00b300"
   GraphMetal1nofill:
     layer: [109, 23]
     hatch_pattern: hollow
@@ -1771,12 +1714,6 @@ LayerViews:
     color: "#00b300"
   GraphMet1Ldrawing:
     layer: [110, 0]
-    hatch_pattern: m4
-    valid: false
-    width: 1
-    color: "#34b7ab"
-  GraphMet1Lfiller:
-    layer: [110, 22]
     hatch_pattern: m4
     valid: false
     width: 1
@@ -1807,12 +1744,6 @@ LayerViews:
     color: "yellow"
   SiNWGdrawing:
     layer: [119, 0]
-    hatch_pattern: stipple12
-    valid: false
-    width: 1
-    color: "#ffffcc"
-  SiNWGfiller:
-    layer: [119, 22]
     hatch_pattern: stipple12
     valid: false
     width: 1
@@ -2102,6 +2033,75 @@ LayerViews:
         hatch_pattern: vZigZag
         width: 1
         color: "lime"
+      GatPolyfiller:
+        layer: [5, 22]
+        hatch_pattern: dagger
+        width: 1
+        color: "#bf4026"
+      Metal1filler:
+        layer: [8, 22]
+        hatch_pattern: m1
+        width: 1
+        color: "#39bfff"
+      Metal2filler:
+        layer: [10, 22]
+        hatch_pattern: m2
+        width: 1
+        color: "#ccccd9"
+      Metal3filler:
+        layer: [30, 22]
+        hatch_pattern: m3
+        width: 1
+        color: "#d80000"
+      Metal4filler:
+        layer: [50, 22]
+        hatch_pattern: m4
+        width: 1
+        color: "#93e837"
+      Metal5filler:
+        layer: [67, 22]
+        hatch_pattern: m5
+        width: 1
+        color: "#dcd146"
+      TopMetal1filler:
+        layer: [126, 22]
+        hatch_pattern: tm1
+        width: 1
+        color: "#ffe6bf"
+      TopMetal2filler:
+        layer: [134, 22]
+        hatch_pattern: m1
+        width: 1
+        color: "#ff8000"
+      BackMetal1filler:
+        layer: [20, 22]
+        hatch_pattern: hollow
+        width: 1
+        color: "#ffe6bf"
+      SiWGfiller:
+        layer: [86, 22]
+        hatch_pattern: stipple12
+        valid: false
+        width: 1
+        color: "#d80000"
+      GraphMetal1filler:
+        layer: [109, 22]
+        hatch_pattern: m5
+        valid: false
+        width: 1
+        color: "#00b300"
+      GraphMet1Lfiller:
+        layer: [110, 22]
+        hatch_pattern: m4
+        valid: false
+        width: 1
+        color: "#34b7ab"
+      SiNWGfiller:
+        layer: [119, 22]
+        hatch_pattern: stipple12
+        valid: false
+        width: 1
+        color: "#ffffcc"
 CustomDitherPatterns:
   blank:
     order: 0
