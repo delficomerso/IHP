@@ -11,50 +11,29 @@ from gdsfactory import Component
 def bondpad(
     shape: Literal["octagon", "square", "circle"] = "octagon",
     stack_metals: bool = True,
-    fill_metals: bool = False,
     flip_chip: bool = False,
     diameter: float = 68.0,
-    top_metal: str = "TopMetal2",
+    top_metal: str = "TopMetal2drawing",
     bottom_metal: str = "Metal1",
+    passivation_open: str = "dfpaddrawing",
+    ubm_layer=(155, 0),
 ) -> Component:
     """Create a bondpad for wire bonding or flip-chip connection.
 
     Args:
         shape: Shape of the bondpad ("octagon", "square", or "circle").
         stack_metals: Stack all metal layers from bottom to top.
-        fill_metals: Add metal fill patterns.
         flip_chip: Enable flip-chip configuration.
         diameter: Diameter or size of the bondpad in micrometers.
         top_metal: Top metal layer name.
         bottom_metal: Bottom metal layer name.
+        passivation_open: Passivation opening layer name.
+        ubm_layer: Under-bump metallization layer.
 
     Returns:
         Component with bondpad layout.
     """
     c = Component()
-
-    # Define metal layers
-    layers = {
-        "Metal1": (8, 0),
-        "Metal2": (10, 0),
-        "Metal3": (30, 0),
-        "Metal4": (50, 0),
-        "Metal5": (67, 0),
-        "TopMetal1": (126, 5),
-        "TopMetal2": (134, 5),
-    }
-
-    # Define via layers
-    via_layers = {
-        "Via1": (19, 0),
-        "Via2": (29, 0),
-        "Via3": (49, 0),
-        "Via4": (66, 0),
-        "Via5": (125, 5),
-    }
-
-    # Passivation and other layers
-    passivation_open = (33, 0)
 
     # Grid alignment
     grid = 0.01
@@ -65,7 +44,7 @@ def bondpad(
         # Square bondpad
         pad = gf.components.rectangle(
             size=(d, d),
-            layer=layers[top_metal],
+            layer=top_metal,
             centered=True,
         )
         c.add_ref(pad)
@@ -73,133 +52,20 @@ def bondpad(
     elif shape == "octagon":
         # Octagonal bondpad
         # Calculate octagon vertices
-        side_length = d / (1 + math.sqrt(2))
-        half_side = side_length / 2
-
-        vertices = [
-            (half_side, d / 2),
-            (d / 2 - half_side, d / 2),
-            (d / 2, d / 2 - half_side),
-            (d / 2, -d / 2 + half_side),
-            (d / 2 - half_side, -d / 2),
-            (-d / 2 + half_side, -d / 2),
-            (-d / 2, -d / 2 + half_side),
-            (-d / 2, d / 2 - half_side),
-        ]
-
-        pad = gf.Component()
-        pad.add_polygon(vertices, layer=layers[top_metal])
+        side_length = gf.snap.snap_to_grid2x(d / (1 + math.sqrt(2)))
+        pad = gf.c.octagon(side_length=side_length, layer=top_metal)
         c.add_ref(pad)
 
     elif shape == "circle":
         # Circular bondpad (approximated with polygon)
         pad = gf.components.circle(
             radius=d / 2,
-            layer=layers[top_metal],
+            layer=top_metal,
         )
         c.add_ref(pad)
 
     else:
         raise ValueError(f"Unknown shape: {shape}")
-
-    # Stack metal layers if requested
-    if stack_metals:
-        # Create stack from bottom_metal to top_metal
-        metal_stack = [
-            "Metal1",
-            "Metal2",
-            "Metal3",
-            "Metal4",
-            "Metal5",
-            "TopMetal1",
-            "TopMetal2",
-        ]
-
-        # Find indices for start and end
-        start_idx = metal_stack.index(bottom_metal)
-        end_idx = metal_stack.index(top_metal)
-
-        # Add metal layers
-        for i in range(start_idx, end_idx):
-            metal_name = metal_stack[i]
-            metal_layer = layers[metal_name]
-
-            if shape == "square":
-                metal = gf.components.rectangle(
-                    size=(d * 0.95, d * 0.95),  # Slightly smaller for via clearance
-                    layer=metal_layer,
-                    centered=True,
-                )
-                c.add_ref(metal)
-
-            elif shape == "octagon":
-                # Scale down octagon for lower metals
-                scale = 0.95
-                scaled_vertices = [(x * scale, y * scale) for x, y in vertices]
-                metal = gf.Component()
-                metal.add_polygon(scaled_vertices, layer=metal_layer)
-                c.add_ref(metal)
-
-            elif shape == "circle":
-                metal = gf.components.circle(
-                    radius=d / 2 * 0.95,
-                    layer=metal_layer,
-                )
-                c.add_ref(metal)
-
-        # Add vias between metal layers
-        via_mapping = {
-            ("Metal1", "Metal2"): "Via1",
-            ("Metal2", "Metal3"): "Via2",
-            ("Metal3", "Metal4"): "Via3",
-            ("Metal4", "Metal5"): "Via4",
-            ("Metal5", "TopMetal1"): "Via5",
-            ("TopMetal1", "TopMetal2"): "TopVia2",
-        }
-
-        # Via parameters
-        via_size = 0.26
-        via_spacing = 0.36
-        via_enclosure = 0.06
-
-        # Calculate via array dimensions
-        n_vias_x = int((d - 2 * via_enclosure) / via_spacing)
-        n_vias_y = int((d - 2 * via_enclosure) / via_spacing)
-
-        # Add via arrays between consecutive metal layers
-        for i in range(start_idx, end_idx):
-            if i < len(metal_stack) - 1:
-                metal1 = metal_stack[i]
-                metal2 = metal_stack[i + 1]
-                via_key = (metal1, metal2)
-
-                if via_key in via_mapping:
-                    via_name = via_mapping[via_key]
-                    if via_name in via_layers:
-                        via_layer = via_layers[via_name]
-                    elif via_name == "TopVia2":
-                        via_layer = (125, 5)
-                    else:
-                        continue
-
-                    # Create via array
-                    for ix in range(n_vias_x):
-                        for iy in range(n_vias_y):
-                            x = -d / 2 + via_enclosure + via_size / 2 + ix * via_spacing
-                            y = -d / 2 + via_enclosure + via_size / 2 + iy * via_spacing
-
-                            # Check if via is within the pad shape
-                            if shape == "circle":
-                                if math.sqrt(x**2 + y**2) > d / 2 * 0.9:
-                                    continue
-
-                            via = gf.components.rectangle(
-                                size=(via_size, via_size),
-                                layer=via_layer,
-                                centered=True,
-                            )
-                            via_ref = c.add_ref(via)
-                            via_ref.move((x, y))
 
     # Add passivation opening
     if shape == "square":
@@ -211,9 +77,8 @@ def bondpad(
         c.add_ref(opening)
     elif shape == "octagon":
         scale = 0.85
-        opening_vertices = [(x * scale, y * scale) for x, y in vertices]
-        opening = gf.Component()
-        opening.add_polygon(opening_vertices, layer=passivation_open)
+        side_length = gf.snap.snap_to_grid2x(scale * d / (1 + math.sqrt(2)))
+        opening = gf.c.octagon(side_length=side_length, layer=passivation_open)
         c.add_ref(opening)
     elif shape == "circle":
         opening = gf.components.circle(
@@ -225,7 +90,6 @@ def bondpad(
     # Add flip-chip bumps if requested
     if flip_chip:
         # Add under-bump metallization (UBM)
-        ubm_layer = (155, 0)  # Example UBM layer
         if shape == "circle":
             ubm = gf.components.circle(
                 radius=d / 2 * 0.7,
@@ -246,7 +110,7 @@ def bondpad(
         center=(0, 0),
         width=d,
         orientation=0,
-        layer=layers[top_metal],
+        layer=top_metal,
         port_type="electrical",
     )
 
@@ -257,7 +121,6 @@ def bondpad(
     c.info["flip_chip"] = flip_chip
     c.info["top_metal"] = top_metal
     c.info["bottom_metal"] = bottom_metal
-
     return c
 
 
@@ -310,12 +173,17 @@ def bondpad_array(
 
 
 if __name__ == "__main__":
+    from ihp import cells
+
     # Test the components
-    c1 = bondpad(shape="octagon")
-    c1.show()
+    c0 = bondpad(shape="octagon")
+    c1 = cells.bondpad()
 
-    c2 = bondpad(shape="square", flip_chip=True)
-    c2.show()
+    c = gf.grid([c0, c1], spacing=100)
+    c.show()
 
-    c3 = bondpad_array(n_pads=6)
-    c3.show()
+    # c2 = bondpad(shape="square", flip_chip=True)
+    # c2.show()
+
+    # c3 = bondpad_array(n_pads=6)
+    # c3.show()
