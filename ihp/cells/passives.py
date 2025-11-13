@@ -706,7 +706,8 @@ def sealring(
 if __name__ == "__main__":
     from gdsfactory.difftest import xor
 
-    from ihp import PDK, cells
+    from ihp import PDK
+    from ihp.cells import fixed
 
     PDK.activate()
 
@@ -719,18 +720,15 @@ if __name__ == "__main__":
 
     # c0 = cells.esd_nmos()  # original
     # c1 = esd_nmos()  # New
-    # # c = gf.grid([c0, c1], spacing=100)
     # c = xor(c0, c1)
     # c.show()
 
-    c0 = cells.ptap1()  # original
+    c0 = fixed.ptap1()  # original
     c1 = ptap1()  # New
-    # c = gf.grid([c0, c1], spacing=100)
     c = xor(c0, c1)
     c.show()
 
-    # c0 = cells.sealring()  # original
+    # c0 = fixed.sealring()  # original
     # c1 = sealring()  # New
-    # # c = gf.grid([c0, c1], spacing=100)
     # c = xor(c0, c1)
     # c.show()

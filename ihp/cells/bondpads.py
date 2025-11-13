@@ -148,14 +148,14 @@ def bondpad_array(
 if __name__ == "__main__":
     from gdsfactory.difftest import xor
 
-    from ihp import PDK, cells
+    from ihp import PDK
+    from ihp.cells import fixed
 
     PDK.activate()
 
     # Test the components
-    c0 = cells.bondpad()  # original
+    c0 = fixed.bondpad()  # original
     c1 = bondpad(shape="octagon")  # new
-    # c = gf.grid([c0, c1], spacing=100)
     c = xor(c0, c1)
     c.show()
 
