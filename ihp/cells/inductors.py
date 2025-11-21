@@ -4,7 +4,6 @@ import math
 
 import gdsfactory as gf
 from gdsfactory import Component
-from gdsfactory.typings import LayerSpec, LayerSpecs
 
 
 def inductor_min_diameter(width: float, space: float, turns: int, grid: float) -> float:
@@ -23,29 +22,20 @@ def inductor_min_diameter(width: float, space: float, turns: int, grid: float) -
     return round(min_d / grid) * grid
 
 
+def snap_to_grid(p, grid: float = 0.005):
+    return round(p / grid) * grid
+
 @gf.cell
 def inductor2(
     width: float = 2.0,
     space: float = 2.1,
     diameter: float = 25.35,
+    vias_width: float = 0.9,
     resistance: float = 0.5777,
     inductance: float = 33.303e-12,
+    terminal_1_length: float = 30.0,
     turns: int = 1,
-    layer_metal: LayerSpec = "TopMetal2drawing",
-    layer_inductor: LayerSpec = "INDdrawing",
-    layer_metal_pin: LayerSpec = "TopMetal2pin",
-    layers_no_fill: LayerSpecs = (
-        "Activnofill",
-        "GatPolynofill",
-        "Metal1nofill",
-        "Metal2nofill",
-        "Metal3nofill",
-        "Metal4nofill",
-        "Metal5nofill",
-        "TopMetal1nofill",
-        "TopMetal2nofill",
-        "PWellblock",
-    ),
+    block_qrc: bool = True,
 ) -> Component:
     """Create a 2-turn inductor.
 
@@ -53,8 +43,10 @@ def inductor2(
         width: Width of the inductor trace in micrometers.
         space: Space between turns in micrometers.
         diameter: Inner diameter in micrometers.
+        vias_width: Width of vias in micrometers (only when turns > 2)
         resistance: Resistance in ohms.
         inductance: Inductance in henries.
+        terminal_1_length: Length of the shorter terminal
         turns: Number of turns (default 1 for inductor2).
         block_qrc: Block QRC layer.
 
@@ -63,69 +55,193 @@ def inductor2(
     """
     c = Component()
 
-    # Grid fixing for manufacturing constraints
-    grid = 0.01
-    w = round(width / (2 * grid)) * 2 * grid
-    s = round(space / grid) * grid
-    d = round(diameter / (2 * grid)) * 2 * grid
+    # Define layers
+    TM1 = (126, 0)  # TopMetal1
+    TM2 = (134, 0)  # TopMetal2
+    TV2 = (133, 0) # TopVia2
+    IND = (27, 0)  # IND layer
+    NoRCX = (148, 0)  # NoRCX layer
+    PWellBlock = (46, 21) # PWellBlock layer
 
-    # Calculate geometry parameters
-    r = d / 2 + s
-    octagon_center_y = 3 * r
+    # No fill layers
+    NoFill_layers = [
+        (1, 23),  # ActiveNoFill
+        (5, 23),  # GatePolyNoFill
+        (8, 23),  # Metal1NoFill
+        (10, 23),  # Metal2NoFill
+        (30, 23),  # Metal3NoFill
+        (50, 23),  # Metal4NoFill
+        (67, 23),  # Metal5NoFill
+        (126, 23),  # TopMetal1NoFill
+        (134, 23),  # TopMetal2NoFill
+    ]
+
+    Pin_layers_1 = [
+        (126, 2),  # TopMetal2pin layer
+        (27, 2)  # INDPin layer
+    ]
+
+    Pin_layers_2 = [
+        (134, 2),  # TopMetal2pin layer
+        (27, 2)  # INDPin layer
+    ]
+
+    w = snap_to_grid(width, grid=0.005*2)
+    s = snap_to_grid(space)
+    d = snap_to_grid(diameter, grid=0.005*2)
+
+    apothem_innermost = d / 2
     pi_over_4 = math.radians(45)
 
-    path_points = []
-    path_points.append((+space / 2, octagon_center_y - r * math.cos(pi_over_4 / 2)))
+    length_short_terminal = terminal_1_length
+    length_long_terminal = length_short_terminal + w + (w + s) * (turns - 1)
 
-    for i in range(-2, 6):
-        angle = i * pi_over_4 + pi_over_4 / 2
-        r = d / 2 + s
-        x = r * math.cos(angle)
-        y = r * math.sin(angle) + octagon_center_y
-
-        if -2 <= i < 2:
-            path_points.append((x, y))
-        else:
-            path_points.append((x, y))
-
-    path_points.append((-space / 2, octagon_center_y - r * math.cos(pi_over_4 / 2)))
-
-    # Create the path
-    path = gf.Path(path_points)
-    c = gf.path.extrude(path, layer=layer_metal, width=w)
-
-    # Adding ports
-    length = 2 * r + s
-
-    port1_trace = c << gf.components.rectangle(size=(s, length), layer=layer_metal)
-    port1_trace.move((-s - s / 2, 0))
-    c.add_port(name="P1", center=(-s, s), width=s, orientation=270, layer=layer_metal)
-
-    port2_trace = c << gf.components.rectangle(size=(s, length), layer=layer_metal)
-    port2_trace.move((s - s / 2, 0))
-    c.add_port(name="P2", center=(+s, s), width=s, orientation=270, layer=layer_metal)
+    octagon_center_y = length_long_terminal + apothem_innermost
 
     # Add IND layer
     outer_polygon_pts = []
     for i in range(8):
-        r_outer = (d / 2 + length) / (math.cos(pi_over_4 / 2))
+        r_outer = octagon_center_y / math.cos(pi_over_4 / 2)
         angle = i * pi_over_4 + pi_over_4 / 2
-        x = r_outer * math.cos(angle)
-        y = r_outer * math.sin(angle) + octagon_center_y
-        outer_polygon_pts.append((x, y))
 
-    c.add_polygon(points=outer_polygon_pts, layer=layer_inductor)
+        x = snap_to_grid(r_outer * math.cos(angle))
+        y = snap_to_grid(r_outer * math.sin(angle) + octagon_center_y)
+        outer_polygon_pts.append((x, y))
+    c.add_polygon(points=outer_polygon_pts, layer=IND)
+
+    # Handle the terminals and pins of the inductor
+    if turns == 1:
+        port1_single_turn = c << gf.components.rectangle(size=(w, length_short_terminal + w), layer=TM2)
+        port1_single_turn.move((-w - s / 2, 0))
+        c.add_port(name="P1", center=(-w / 2 - s / 2, 0), width=w, orientation=270, layer=TM2)
+
+        for layer in Pin_layers_2:
+            pin_1_trace = c << gf.components.rectangle(size=(w, w), layer=layer)
+            pin_1_trace.move((-w - s / 2, 0))
+
+        port2_single_turn = c << gf.components.rectangle(size=(w, length_short_terminal + w), layer=TM2)
+        port2_single_turn.move((s/2, 0))
+        c.add_port(name="P2", center=(w / 2 + s / 2, 0), width=w, orientation=270, layer=TM2)
+
+        for layer in Pin_layers_2:
+            pin_2_trace = c << gf.components.rectangle(size=(w, w), layer=layer)
+            pin_2_trace.move((s / 2, 0))
+    else:
+        port_short = c << gf.components.rectangle(size=(w, length_short_terminal), layer=TM2)
+        port_short.move((- w / 2, 0))
+        c.add_port(
+            name="P1", center=(0, 0), width=w, orientation=270, layer=TM2
+        )
+
+        for layer in Pin_layers_2:
+            pin_short_trace = c << gf.components.rectangle(size=(w, w), layer=layer)
+            pin_short_trace.move((-w / 2, 0))
+
+        port_long_1 = c << gf.components.rectangle(size=(w, length_long_terminal), layer=TM1)
+        port_long_1.move((-(w + s) - w / 2, 0))
+        c.add_port(
+            name="P2", center=(-(w + s), 0), width=w, orientation=270, layer=TM1
+        )
+
+        for layer in Pin_layers_1:
+            pin_long1_trace = c << gf.components.rectangle(size=(w, w), layer=layer)
+            pin_long1_trace.move((-(w + s) - w / 2, 0))
+
+        port_long_2 = c << gf.components.rectangle(size=(w, length_long_terminal), layer=TM1)
+        port_long_2.move(((w + s) - w / 2, 0))
+        c.add_port(
+            name="P3", center=(w + s, 0), width=w, orientation=270, layer=TM1
+        )
+
+        for layer in Pin_layers_1:
+            pin_long1_trace = c << gf.components.rectangle(size=(w, w), layer=layer)
+            pin_long1_trace.move((w + s - w / 2, 0))
+
+    # Add blocking layer
+    if block_qrc:
+        c.add_polygon(points=outer_polygon_pts, layer=NoRCX)
+
+    # Add PWell block
+    c.add_polygon(points=outer_polygon_pts, layer=PWellBlock)
 
     # Add No fill layers
-    for layer in layers_no_fill:
+    for layer in NoFill_layers:
         c.add_polygon(points=outer_polygon_pts, layer=layer)
 
-    # Adding pins
-    pin_1_trace = c << gf.components.rectangle(size=(s, s), layer=layer_metal_pin)
-    pin_1_trace.move((s / 2, 0))
+    # We break down the body of inductor into 3 sections
+    for k in range(turns):
+        d = (apothem_innermost + w / 2) + (w + s) * k
+        half_octagon_side = d * math.tan(pi_over_4 / 2)
 
-    pin_2_trace = c << gf.components.rectangle(size=(s, s), layer=layer_metal_pin)
-    pin_2_trace.move((-s - s / 2, 0))
+        # Step 1a: We handle the left semi-octagon loops
+        x = (-s / 2) if turns == 1 else (-s - w / 2)
+        left_octagon_fragment = [(x, octagon_center_y + d),
+                                 (-half_octagon_side, octagon_center_y + d),
+                                 (- d, octagon_center_y + half_octagon_side),
+                                 (- d, octagon_center_y - half_octagon_side),
+                                 (-half_octagon_side, octagon_center_y - d),
+                                 (x, octagon_center_y - d)]
+
+        left_path = gf.Path(left_octagon_fragment)
+        c << gf.path.extrude(left_path, layer=TM2, width=w)
+
+        # Step 1b: We handle the left semi-octagon loops
+        x = (s / 2) if turns == 1 else (s + w / 2)
+        right_octagon_fragment = [(x, octagon_center_y + d),
+                                 (half_octagon_side, octagon_center_y + d),
+                                 (d, octagon_center_y + half_octagon_side),
+                                 (d, octagon_center_y - half_octagon_side),
+                                 (half_octagon_side, octagon_center_y - d),
+                                 (x, octagon_center_y - d)]
+
+        right_path = gf.Path(right_octagon_fragment)
+        c << gf.path.extrude(right_path, layer=TM2, width=w)
+
+        # Step 2: We handle the connections of the loops within TM2
+        if turns == 1:
+            center_fragment = [(-w - s / 2, octagon_center_y + d), (w + s / 2, octagon_center_y + d)]
+            center_path = gf.Path(center_fragment)
+            c << gf.path.extrude(center_path, layer=TM2, width=w)
+        else:
+            if k == 0:
+                continue
+
+            center_fragment = [(-s - w / 2, octagon_center_y - d), (s + w / 2, octagon_center_y - d)]
+            center_path = gf.Path(center_fragment)
+            c << gf.path.extrude(center_path, layer=TM2, width=w)
+
+            connecting_fragment_TM2 = [(-s - w / 2, octagon_center_y + d - w - s),
+                                       (-w, octagon_center_y + d - w - s),
+                                       (w, octagon_center_y + d),
+                                       (s + w / 2, octagon_center_y + d)]
+
+            connecting_path_TM2 = gf.Path(connecting_fragment_TM2)
+            c << gf.path.extrude(connecting_path_TM2, layer=TM2, width=w)
+
+
+    # Step 3: We handle the cross connection of the loops using TM1 and vias
+    if turns > 1:
+        connecting_fragment_TM1 = [(-s - w / 2 - w, octagon_center_y + d),
+                                   (-w, octagon_center_y + d),
+                                   (w, octagon_center_y + d - (w + s) * (turns - 1)),
+                                   (s + w / 2 + w, octagon_center_y + d - (w + s) * (turns - 1))]
+        connecting_path_TM1 = gf.Path(connecting_fragment_TM1)
+        c << gf.path.extrude(connecting_path_TM1, layer=TM1, width=w)
+
+        offset_x = w / 2 - vias_width / 2
+        offset_y = vias_width / 2
+
+        via_1_trace = c << gf.components.rectangle(size=(vias_width, vias_width), layer=TV2)
+        via_1_trace.move((-s - w / 2 - w + offset_x, octagon_center_y + d - offset_y))
+
+        via_2_trace = c << gf.components.rectangle(size=(vias_width, vias_width), layer=TV2)
+        via_2_trace.move((s + w / 2 + offset_x, octagon_center_y + d - (w + s) * (turns - 1) - offset_y))
+
+        via_3_trace = c << gf.components.rectangle(size=(vias_width, vias_width), layer=TV2)
+        via_3_trace.move((-s - w / 2 - w + offset_x, octagon_center_y - d + (w + s) * (turns - 1) - offset_y))
+
+        via_2_trace = c << gf.components.rectangle(size=(vias_width, vias_width), layer=TV2)
+        via_2_trace.move((s + w / 2 + offset_x, octagon_center_y - d + (w + s) * (turns - 1) - offset_y))
 
     # Add metadata
     c.info["resistance"] = resistance
@@ -135,6 +251,7 @@ def inductor2(
     c.info["width"] = width
     c.info["space"] = space
     c.info["diameter"] = diameter
+
     return c
 
 
@@ -142,25 +259,13 @@ def inductor2(
 def inductor3(
     width: float = 2.0,
     space: float = 2.1,
-    diameter: float = 24.68,
+    diameter: float = 25.84,
+    vias_width: float = 0.9,
     resistance: float = 1.386,
     inductance: float = 221.5e-12,
+    terminal_1_length: float = 30.0,
     turns: int = 2,
-    layer_metal: LayerSpec = "TopMetal2drawing",
-    layer_inductor: LayerSpec = "INDdrawing",
-    layer_metal_pin: LayerSpec = "TopMetal2pin",
-    layers_no_fill: LayerSpecs = (
-        "Activnofill",
-        "GatPolynofill",
-        "Metal1nofill",
-        "Metal2nofill",
-        "Metal3nofill",
-        "Metal4nofill",
-        "Metal5nofill",
-        "TopMetal1nofill",
-        "TopMetal2nofill",
-        "PWellblock",
-    ),
+    block_qrc: bool = True,
 ) -> Component:
     """Create a 3-turn inductor.
 
@@ -168,13 +273,13 @@ def inductor3(
         width: Width of the inductor trace in micrometers.
         space: Space between turns in micrometers.
         diameter: Inner diameter in micrometers.
+        vias_width: Width of vias in micrometers (only when turns > 2)
         resistance: Resistance in ohms.
         inductance: Inductance in henries.
+        terminal_1_length: Length of the shorter terminal
         turns: Number of turns (default 2 for inductor3).
-        layer_metal: Metal layer for the inductor trace.
-        layer_inductor: IND layer for inductor marking.
-        layer_metal_pin: Metal pin layer.
-        layers_no_fill: Tuple of no-fill layers to add.
+        block_qrc: Block QRC layer.
+        substrate_etch: Enable substrate etching.
 
     Returns:
         Component with inductor layout.
@@ -184,13 +289,12 @@ def inductor3(
         width=width,
         space=space,
         diameter=diameter,
+        vias_width=vias_width,
         resistance=resistance,
         inductance=inductance,
+        terminal_1_length=terminal_1_length,
         turns=turns,
-        layer_metal=layer_metal,
-        layer_inductor=layer_inductor,
-        layer_metal_pin=layer_metal_pin,
-        layers_no_fill=layers_no_fill,
+        block_qrc=block_qrc
     )
 
 
@@ -200,14 +304,21 @@ if __name__ == "__main__":
     from ihp import PDK
     from ihp.cells import fixed
 
+    from gdsfactory.difftest import xor
+
     PDK.activate()
 
     # Test the components
-    c0 = fixed.inductor2_fixed()  # original
-    c1 = inductor2()  # New Parametric
+    c0 = fixed.inductor3()  # original
+    c1 = inductor3()  # New
     c = xor(c0, c1)
     c.show()
 
-    # c0 = fixed.inductor3()  # original
-    # c1 = inductor3()  # New
+    # c0 = fixed.inductor2()  # original
+    # c1 = inductor2()  # New
     # c = xor(c0, c1)
+    # c.show()
+
+    # c = inductor2(turns=7)
+    # c.show()
+
