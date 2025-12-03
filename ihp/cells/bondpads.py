@@ -1,14 +1,19 @@
 """Bondpad components for IHP PDK."""
 
-import math
-from typing import Literal
-
-import gdsfactory as gf
 from gdsfactory import Component
-from gdsfactory.typings import (
-    LayerSpec,
-)
 
+from typing import Literal, Tuple
+import math
+import gdsfactory as gf
+from gdsfactory.typings import LayerSpec
+
+def regular_octagon_points(diameter: float):
+    """Create a regular octagon"""
+    side = diameter / (1 + math.sqrt(2))
+    R = side / (2 * math.sin(math.pi / 8))
+    start_angle = math.pi / 8
+    return [(R * math.cos(start_angle + i * math.pi / 4),
+             R * math.sin(start_angle + i * math.pi / 4)) for i in range(8)]
 
 @gf.cell
 def bondpad(
@@ -17,76 +22,60 @@ def bondpad(
     layer_top_metal: LayerSpec = "TopMetal2drawing",
     layer_passiv: LayerSpec = "Passivpillar",
     layer_dfpad: LayerSpec = "dfpaddrawing",
-    bbox_offsets: tuple[float, ...] | None = (-2.1, 0),
-) -> Component:
+    bbox_offsets: Tuple[float, ...] | None = (-2.1, 0),
+    flip_chip: bool = False,
+) -> gf.Component:
     """Create a bondpad for wire bonding or flip-chip connection.
 
     Args:
-        shape: Shape of the bondpad ("octagon", "square", or "circle").
-        diameter: Diameter or size of the bondpad in micrometers.
-        layer_top_metal: Top metal layer for the bondpad.
-        layer_passiv: Passivation layer.
-        layer_dfpad: Deep fill pad layer.
-        bbox_offsets: Offsets for each additional layer.
+        shape: Shape of the top-metal bondpad ("octagon", "square", or "circle").
+        diameter: Interpreted as across-flats for octagons / squares, and diameter for circles.
+        layer_top_metal: Top metal layer.
+        layer_passiv: Passivation-opening layer.
+        layer_dfpad: Deep-fill or density-fill support layer.
+        bbox_offsets: Per-layer expansion distances in micrometers, applied to the passivation and dfpad layers.
+        flip_chip: If True, suppress passivation opening for flip-chip bumps.
 
     Returns:
-        Component with bondpad layout.
+        Component containing the complete bondpad stack.
     """
-    c = Component()
 
-    # Grid alignment
-    d = diameter
+    c = gf.Component()
+    d = float(diameter)
 
-    # Create the main pad shape
+    # Add top metal layer
     if shape == "square":
-        # Square bondpad
-        pad = gf.components.rectangle(
-            size=(d, d),
-            layer=layer_top_metal,
-            centered=True,
-        )
-        c.add_ref(pad)
+        c.add_ref(gf.components.rectangle(size=(d, d), layer=layer_top_metal, centered=True))
 
     elif shape == "octagon":
-        # Octagonal bondpad
-        # Calculate octagon vertices
-        side_length = gf.snap.snap_to_grid2x(d / (1 + math.sqrt(2)))
-        pad = gf.c.octagon(side_length=side_length, layer=layer_top_metal)
-        c.add_ref(pad)
+        pts = regular_octagon_points(d)
+        c.add_polygon(points=pts, layer=layer_top_metal)
 
     elif shape == "circle":
-        # Circular bondpad (approximated with polygon)
-        pad = gf.components.circle(
-            radius=d / 2,
-            layer=layer_top_metal,
-        )
-        c.add_ref(pad)
+        c.add_ref(gf.components.circle(radius=d / 2, layer=layer_top_metal))
 
     else:
         raise ValueError(f"Unknown shape: {shape}")
 
-    # Stack additional metal layers if required
-    bbox_layers = (layer_passiv, layer_dfpad)
-    for layer, offset in zip(bbox_layers, bbox_offsets or []):
-        if shape == "square":
-            opening = gf.components.rectangle(
-                size=(d + offset, d + offset),
-                layer=layer,
-                centered=True,
-            )
-            c.add_ref(opening)
-        elif shape == "octagon":
-            side_length = gf.snap.snap_to_grid2x(offset + d / (1 + math.sqrt(2)))
-            opening = gf.c.octagon(side_length=side_length, layer=layer)
-            c.add_ref(opening)
-        elif shape == "circle":
-            opening = gf.components.circle(
-                radius=d / 2 + offset / 2,
-                layer=layer,
-            )
-            c.add_ref(opening)
+    # Add additional layers
+    if flip_chip:
+        # Skip passivation opening for flip-chip
+        bbox_layers = (layer_dfpad,)
+        bbox_offsets = (bbox_offsets or ())[1:]
+    else:
+        bbox_layers = (layer_passiv, layer_dfpad)
 
-    # Add port at the center
+    for layer, offset in zip(bbox_layers, bbox_offsets or ()):
+        new_d = d + float(offset * 2)
+
+        if shape == "square":
+            c.add_ref(gf.components.rectangle(size=(new_d, new_d), layer=layer, centered=True))
+        elif shape == "circle":
+            c.add_ref(gf.components.circle(radius=new_d / 2, layer=layer))
+        elif shape == "octagon":
+            c.add_polygon(points=regular_octagon_points(new_d), layer=layer)
+
+    # Add port
     c.add_port(
         name="pad",
         center=(0, 0),
@@ -101,7 +90,6 @@ def bondpad(
     c.info["diameter"] = diameter
     c.info["top_metal"] = layer_top_metal
     return c
-
 
 @gf.cell
 def bondpad_array(
