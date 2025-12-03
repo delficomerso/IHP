@@ -4,11 +4,18 @@ import gdsfactory as gf
 from gdsfactory import Component
 from gdsfactory.typings import LayerSpec
 
+def add_rect(component, size: tuple[float, float], layer: LayerSpec, origin: tuple[float, float], centered: bool = False):
+    """Create rectangle, add ref to component and move to origin, return ref."""
+    rect = gf.components.rectangle(size=size, layer=layer, centered=centered)
+    ref = component.add_ref(rect)
+    ref.move(origin)
+    return ref
+
 
 @gf.cell
 def rsil(
-    width: float = 0.5,
-    length: float = 0.5,
+    dy: float = 0.5,
+    dx: float = 0.5,
     resistance: float | None = None,
     model: str = "rsil",
     layer_poly: LayerSpec = "PolyResdrawing",
@@ -20,11 +27,11 @@ def rsil(
     layer_res_mark: LayerSpec = "RESdrawing",
     layer_block: LayerSpec = "EXTBlockdrawing",
 ) -> Component:
-    """Create a silicided polysilicon resistor.
+    """Create a vertical silicided polysilicon resistor (i.e. with dy as its length)
 
     Args:
-        width: Width of the resistor in micrometers.
-        length: Length of the resistor in micrometers.
+        dy: length of the resistor in micrometers.
+        dx: width of the resistor in micrometers.
         resistance: Target resistance in ohms (optional).
         model: Device model name.
         layer_poly: Polysilicon layer.
@@ -41,143 +48,119 @@ def rsil(
     """
     c = Component()
 
-    # Default parameters
-    rsil_min_width = 0.4
-    rsil_min_length = 0.5
-    sheet_resistance = 7.0
-    gate_poly_end_extension_width = 0.35
+    # Constants
+    RSIL_MIN_DY = 0.4
+    RSIL_MIN_DX = 0.4
+    GRID = 0.005
 
-    # Contact parameters
-    cont_width = 0.16
-    cont_length = 0.36
-    cont_space_x = 0.07
-    cont_space_y = 0.12
+    SHEET_RESISTANCE = 7.0
+    GAT_DY = 0.35
 
-    # Metal layer parameters
-    metal_contact_margin = 0.05
+    # Geometry
+    METAL_PAD_DY = 0.26
+    GAT_METAL_MARGIN = 0.02
+    METAL_CONTACT_MARGIN = 0.05
+    BLOCK_MARGIN = 0.18
 
-    # Blocking layer parameters
-    block_width = 1.56
-    block_length = 0.86
+    # Validate / snap to grid
+    dy = max(dy, RSIL_MIN_DY)
+    dx = max(dx, RSIL_MIN_DX)
+    dy = round(dy / GRID) * GRID
+    dx = round(dx / GRID) * GRID
 
-    # Validate dimensions
-    width = max(width, rsil_min_width)
-    length = max(length, rsil_min_length)
-
-    # Grid snap
-    grid = 0.005
-    width = round(width / grid) * grid
-    length = round(length / grid) * grid
-
-    # Calculate resistance if not provided
+    # Resistance calculation
     if resistance is None:
-        n_squares = length / width
-        resistance = n_squares * sheet_resistance
+        n_squares = dy / dx
+        resistance = n_squares * SHEET_RESISTANCE
+    else:
+        n_squares = dy / dx
 
-    # Create resistor body (polysilicon)
-    body_layers = [layer_poly, layer_heat, layer_res_mark]
-    for layer in body_layers:
-        res_body = gf.components.rectangle(
-            size=(length, width),
-            layer=layer,
-            centered=True,
-        )
-        res_body_ref = c.add_ref(res_body)
-        res_body_ref.move((length / 2, width / 2))
+    # Compute geometry
+    # Resistor body bottom-left at (0,0)
+    body_origin = (0.0, 0.0)
 
-    # End contact regions (gate polysilicon extensions)
-    upper_contact = gf.components.rectangle(
-        size=(length, gate_poly_end_extension_width),
-        layer=layer_gate,
-    )
-    upper_ref = c.add_ref(upper_contact)
-    upper_ref.move((0, width))
+    # Pad sizes
+    metal_pad_dx = dx - 2 * GAT_METAL_MARGIN
+    metal_pad_dy = METAL_PAD_DY
 
-    lower_contact = gf.components.rectangle(
-        size=(length, gate_poly_end_extension_width),
-        layer=layer_gate,
-    )
-    lower_ref = c.add_ref(lower_contact)
-    lower_ref.move((0, -gate_poly_end_extension_width))
+    # Pad coordinates
+    metal_pad_left_x = GAT_METAL_MARGIN
+    metal_pad_upper_y = dy + GAT_DY - metal_pad_dy - GAT_METAL_MARGIN
+    metal_pad_lower_y = -GAT_DY + GAT_METAL_MARGIN
 
-    # Contact regions
-    cont_upper = gf.components.rectangle(
-        size=(cont_length, cont_width),
-        layer=layer_contact,
-    )
-    cont_upper_ref = c.add_ref(cont_upper)
-    cont_upper_ref.move((cont_space_x, width + cont_space_y))
+    # Contacts inside pads
+    contact_dx = metal_pad_dx - 2 * METAL_CONTACT_MARGIN
+    contact_dy = metal_pad_dy - 2 * METAL_CONTACT_MARGIN
+    contact_x = metal_pad_left_x + METAL_CONTACT_MARGIN
+    contact_upper_y = metal_pad_upper_y + METAL_CONTACT_MARGIN
+    contact_lower_y = metal_pad_lower_y + METAL_CONTACT_MARGIN
 
-    cont_lower = gf.components.rectangle(
-        size=(cont_length, cont_width),
-        layer=layer_contact,
-    )
-    cont_lower_ref = c.add_ref(cont_lower)
-    cont_lower_ref.move((cont_space_x, - cont_width - cont_space_y))
+    # blocking rectangle size & origin
+    block_dx = dx + 2 * BLOCK_MARGIN
+    block_dy = dy + 2 * (GAT_DY + BLOCK_MARGIN)
+    block_origin = ((dx - block_dx) / 2.0, (dy - block_dy) / 2.0)
 
-    # Metal layer regions
-    metal_length = cont_length + 2 * metal_contact_margin
-    metal_width = cont_width + 2 * metal_contact_margin
-    metal_space_x = cont_space_x - metal_contact_margin
-    metal_space_y = cont_space_y - metal_contact_margin
+    # Draw resistor body (polysilicon + heat + res marker)
+    for ly in (layer_poly, layer_heat, layer_res_mark):
+        add_rect(c, size=(dx, dy), layer=ly, origin=body_origin)
 
-    metal_layers = [layer_metal1_pin, layer_metal1]
+    # Gate extensions (top and bottom)
+    gate_size = (dx, GAT_DY)
+    add_rect(c, size=gate_size, layer=layer_gate, origin=(0.0, dy))
+    add_rect(c, size=gate_size, layer=layer_gate, origin=(0.0, -GAT_DY))
 
-    for layer in metal_layers:
-        metal_upper = gf.components.rectangle(
-            size=(metal_length, metal_width),
-            layer=layer,
-        )
-        metal_upper_ref = c.add_ref(metal_upper)
-        metal_upper_ref.move((metal_space_x, width + metal_space_y))
+    # Metal pads (pin then metal1)
+    for ly in (layer_metal1_pin, layer_metal1):
+        add_rect(c, size=(metal_pad_dx, metal_pad_dy), layer=ly, origin=(metal_pad_left_x, metal_pad_upper_y))
+        add_rect(c, size=(metal_pad_dx, metal_pad_dy), layer=ly, origin=(metal_pad_left_x, metal_pad_lower_y))
 
-        metal_lower = gf.components.rectangle(
-            size=(metal_length, metal_width),
-            layer=layer,
-        )
-        metal_lower_ref = c.add_ref(metal_lower)
-        metal_lower_ref.move((metal_space_x, - metal_width - metal_space_y))
+    # Contacts (inside metal pads)
+    add_rect(c, size=(contact_dx, contact_dy), layer=layer_contact, origin=(contact_x, contact_upper_y))
+    add_rect(c, size=(contact_dx, contact_dy), layer=layer_contact, origin=(contact_x, contact_lower_y))
 
-    # Add blocking layers
-    block = gf.components.rectangle(
-        size=(block_length, block_width),
-        layer=layer_block,
-    )
-    block_ref = c.add_ref(block)
-    block_ref.move(((length - block_length) / 2, (width - block_width) / 2))
+    # Blocking layer
+    add_rect(c, size=(block_dx, block_dy), layer=layer_block, origin=block_origin)
 
-    # Add ports
+    # Ports (derive from pad geometry)
+    pad_center_x = metal_pad_left_x + metal_pad_dx / 2.0
+    pad_upper_center_y = metal_pad_upper_y + metal_pad_dy / 2.0
+    pad_lower_center_y = metal_pad_lower_y + metal_pad_dy / 2.0
+
     c.add_port(
         name="P1",
-        center=(-(length / 2 + gate_poly_end_extension_width / 2), 0),
-        width=cont_width,
-        orientation=180,
+        center=(pad_center_x, pad_upper_center_y),
+        width=metal_pad_dx,
+        orientation=90,
         layer=layer_metal1,
-        port_type="electrical")
+        port_type="electrical",
+    )
 
     c.add_port(
         name="P2",
-        center=(length / 2 + gate_poly_end_extension_width / 2, 0),
-        width=cont_width,
-        orientation=0,
+        center=(pad_center_x, pad_lower_center_y),
+        width=metal_pad_dx,
+        orientation=270,
         layer=layer_metal1,
-        port_type="electrical")
+        port_type="electrical",
+    )
 
-    # Add metadata
-    c.info["model"] = model
-    c.info["width"] = width
-    c.info["length"] = length
-    c.info["resistance"] = resistance
-    c.info["sheet_resistance"] = sheet_resistance
-    c.info["n_squares"] = length / width
+    # Metadata
+    c.info.update({
+        "model": model,
+        "dy": dy,
+        "dx": dx,
+        "resistance": resistance,
+        "sheet_resistance": SHEET_RESISTANCE,
+        "n_squares": n_squares,
+    })
 
     return c
 
 
 @gf.cell
 def rppd(
-    width: float = 0.5,
-    length: float = 0.5,
+    dy: float = 0.5,
+    dx: float = 0.5,
     resistance: float | None = None,
     model: str = "rsil",
     layer_poly: LayerSpec = "PolyResdrawing",
@@ -190,11 +173,11 @@ def rppd(
     layer_block: LayerSpec = "EXTBlockdrawing",
     layer_sal_block: LayerSpec = "SalBlockdrawing",
 ) -> Component:
-    """Create a P+ polysilicon resistor.
+    """Create a vertical P+ polysilicon resistor (i.e. with dy as its length).
 
     Args:
-        width: Width of the resistor in micrometers.
-        length: Length of the resistor in micrometers.
+        dy: length of the resistor in micrometers.
+        dx: width of the resistor in micrometers.
         resistance: Target resistance in ohms (optional).
         model: Device model name.
         layer_poly: Polysilicon layer.
@@ -212,157 +195,131 @@ def rppd(
     """
     c = Component()
 
-    # Default parameters
-    rppd_min_width = 0.4
-    rppd_min_length = 0.5
-    sheet_resistance = 300.0
-    gate_poly_end_extension_width = 0.43
+    # Constants
+    RPPD_MIN_DY = 0.4
+    RPPD_MIN_DX = 0.5
+    GRID = 0.005
 
-    # Contact parameters
-    cont_width = 0.16
-    cont_length = 0.36
-    cont_space_x = 0.07
-    cont_space_y = 0.20
+    SHEET_RESISTANCE = 300.0
+    GAT_DY = 0.43
 
-    # Metal layer parameters
-    metal_contact_margin_x = 0.05
-    metal_contact_margin_y = 0.07
+    # Geometry
+    METAL_PAD_DY = 0.30
+    METAL_CONTACT_MARGIN_DX = 0.05
+    METAL_CONTACT_MARGIN_DY = 0.07
+    GAT_METAL_MARGIN_DX = 0.02
+    GAT_METAL_MARGIN_DY = 0.00
 
-    # Blocking layer parameters
-    block_width = 1.72
-    block_length = 0.86
-    block_2_width = 0.50
-    block_2_length = 0.90
+    BLOCK_MARGIN = 0.18
+    BLOCK2_MARGIN = 0.02
 
-    # Validate dimensions
-    width = max(width, rppd_min_width)
-    length = max(length, rppd_min_length)
+    # Validate
+    dy = max(dy, RPPD_MIN_DY)
+    dx = max(dx, RPPD_MIN_DX)
+    dy = round(dy / GRID) * GRID
+    dx = round(dx / GRID) * GRID
 
-    # Grid snap
-    grid = 0.005
-    width = round(width / grid) * grid
-    length = round(length / grid) * grid
-
-    # Calculate resistance if not provided
+    # Resistance calculation
     if resistance is None:
-        n_squares = length / width
-        resistance = n_squares * sheet_resistance
+        n_squares = dy / dx
+        resistance = n_squares * SHEET_RESISTANCE
+    else:
+        n_squares = dy / dx
 
-    # Create resistor body (polysilicon)
-    body_layers = [layer_poly, layer_heat]
-    for layer in body_layers:
-        res_body = gf.components.rectangle(
-            size=(length, width),
-            layer=layer,
-            centered=True,
-        )
-        res_body_ref = c.add_ref(res_body)
-        res_body_ref.move((length / 2, width / 2))
+    # Geometry
+    body_origin = (0.0, 0.0)
 
-    # End contact regions (gate polysilicon extensions)
-    upper_contact = gf.components.rectangle(
-        size=(length, gate_poly_end_extension_width),
-        layer=layer_gate,
-    )
-    upper_ref = c.add_ref(upper_contact)
-    upper_ref.move((0, width))
+    # Metal pad sizes
+    metal_pad_dx = dx - 2 * GAT_METAL_MARGIN_DX
+    metal_pad_dy = METAL_PAD_DY
 
-    lower_contact = gf.components.rectangle(
-        size=(length, gate_poly_end_extension_width),
-        layer=layer_gate,
-    )
-    lower_ref = c.add_ref(lower_contact)
-    lower_ref.move((0, -gate_poly_end_extension_width))
+    # Metal pad coordinates
+    metal_pad_left_x = GAT_METAL_MARGIN_DX
+    metal_pad_upper_y = dy + GAT_DY - metal_pad_dy - GAT_METAL_MARGIN_DY
+    metal_pad_lower_y = -GAT_DY + GAT_METAL_MARGIN_DY
 
-    # Contact regions
-    cont_upper = gf.components.rectangle(
-        size=(cont_length, cont_width),
-        layer=layer_contact,
-    )
-    cont_upper_ref = c.add_ref(cont_upper)
-    cont_upper_ref.move((cont_space_x, width + cont_space_y))
+    # Contact sizes
+    contact_dx = metal_pad_dx - 2 * METAL_CONTACT_MARGIN_DX
+    contact_dy = metal_pad_dy - 2 * METAL_CONTACT_MARGIN_DY
 
-    cont_lower = gf.components.rectangle(
-        size=(cont_length, cont_width),
-        layer=layer_contact,
-    )
-    cont_lower_ref = c.add_ref(cont_lower)
-    cont_lower_ref.move((cont_space_x, - cont_width - cont_space_y))
+    contact_left_x = metal_pad_left_x + METAL_CONTACT_MARGIN_DX
+    contact_upper_y = metal_pad_upper_y + METAL_CONTACT_MARGIN_DY
+    contact_lower_y = metal_pad_lower_y + METAL_CONTACT_MARGIN_DY
 
-    # Metal layer regions
-    metal_length = cont_length + 2 * metal_contact_margin_x
-    metal_width = cont_width + 2 * metal_contact_margin_y
-    metal_space_x = cont_space_x - metal_contact_margin_x
-    metal_space_y = cont_space_y - metal_contact_margin_y
+    # Blocking layers
+    block_dx = dx + 2 * BLOCK_MARGIN
+    block_dy = dy + 2 * (GAT_DY + BLOCK_MARGIN)
+    block_origin = ((dx - block_dx) / 2.0, (dy - block_dy) / 2.0)
 
-    metal_layers = [layer_metal1_pin, layer_metal1]
+    block2_dx = block_dx + 2 * BLOCK2_MARGIN
+    block2_dy = dy
+    block2_origin = ((dx - block2_dx) / 2.0, (dy - block2_dy) / 2.0)
 
-    for layer in metal_layers:
-        metal_upper = gf.components.rectangle(
-            size=(metal_length, metal_width),
-            layer=layer,
-        )
-        metal_upper_ref = c.add_ref(metal_upper)
-        metal_upper_ref.move((metal_space_x, width + metal_space_y))
+    # Draw resistor body
+    for ly in (layer_poly, layer_heat):
+        add_rect(c, size=(dx, dy), layer=ly, origin=body_origin)
 
-        metal_lower = gf.components.rectangle(
-            size=(metal_length, metal_width),
-            layer=layer,
-        )
-        metal_lower_ref = c.add_ref(metal_lower)
-        metal_lower_ref.move((metal_space_x, - metal_width - metal_space_y))
+    # Gate poly extensions
+    gate_size = (dx, GAT_DY)
+    add_rect(c, size=gate_size, layer=layer_gate, origin=(0.0, dy))
+    add_rect(c, size=gate_size, layer=layer_gate, origin=(0.0, -GAT_DY))
 
-    # Add blocking layers
-    blocks_1_layers = [layer_block, layer_pSD]
-    for layer in blocks_1_layers:
-        block = gf.components.rectangle(
-            size=(block_length, block_width),
-            layer=layer,
-        )
-        block_ref = c.add_ref(block)
-        block_ref.move(((length - block_length) / 2, (width - block_width) / 2))
+    # Contacts
+    add_rect(c, size=(contact_dx, contact_dy), layer=layer_contact, origin=(contact_left_x, contact_upper_y))
+    add_rect(c, size=(contact_dx, contact_dy), layer=layer_contact, origin=(contact_left_x, contact_lower_y))
 
-    blocks_2_layers = [layer_block, layer_sal_block]
-    for layer in blocks_2_layers:
-        block_2 = gf.components.rectangle(
-            size=(block_2_length, block_2_width),
-            layer=layer,
-        )
-        block_2_ref = c.add_ref(block_2)
-        block_2_ref.move(((length - block_2_length) / 2, (width - block_2_width) / 2))
+    # Metal pads (pin + metal1)
+    for ly in (layer_metal1_pin, layer_metal1):
+        add_rect(c, size=(metal_pad_dx, metal_pad_dy), layer=ly, origin=(metal_pad_left_x, metal_pad_upper_y))
+        add_rect(c, size=(metal_pad_dx, metal_pad_dy), layer=ly, origin=(metal_pad_left_x, metal_pad_lower_y))
 
-    # Add ports
+    # Blocking layers
+    for ly in (layer_block, layer_pSD):
+        add_rect(c, size=(block_dx, block_dy), layer=ly, origin=block_origin)
+
+    for ly in (layer_block, layer_sal_block):
+        add_rect(c, size=(block2_dx, block2_dy), layer=ly, origin=block2_origin)
+
+    # Ports
+    metal_pad_center_x = metal_pad_left_x + metal_pad_dx / 2.0
+    metal_pad_upper_center_y = metal_pad_upper_y + metal_pad_dy / 2.0
+    metal_pad_lower_center_y = metal_pad_lower_y + metal_pad_dy / 2.0
+
     c.add_port(
         name="P1",
-        center=(-(length / 2 + gate_poly_end_extension_width / 2), 0),
-        width=cont_width,
-        orientation=180,
+        center=(metal_pad_center_x, metal_pad_upper_center_y),
+        width=metal_pad_dx,
+        orientation=90,
         layer=layer_metal1,
-        port_type="electrical")
+        port_type="electrical",
+    )
 
     c.add_port(
         name="P2",
-        center=(length / 2 + gate_poly_end_extension_width / 2, 0),
-        width=cont_width,
-        orientation=0,
+        center=(metal_pad_center_x, metal_pad_lower_center_y),
+        width=metal_pad_dx,
+        orientation=270,
         layer=layer_metal1,
-        port_type="electrical")
+        port_type="electrical",
+    )
 
-    # Add metadata
-    c.info["model"] = model
-    c.info["width"] = width
-    c.info["length"] = length
-    c.info["resistance"] = resistance
-    c.info["sheet_resistance"] = sheet_resistance
-    c.info["n_squares"] = length / width
+    # Metadata
+    c.info.update({
+        "model": model,
+        "dy": dy,
+        "dx": dx,
+        "resistance": resistance,
+        "sheet_resistance": SHEET_RESISTANCE,
+        "n_squares": n_squares,
+    })
 
     return c
 
 
 @gf.cell
 def rhigh(
-    width: float = 0.96,
-    length: float = 0.5,
+    dy: float = 0.96,
+    dx: float = 0.5,
     resistance: float | None = None,
     model: str = "rsil",
     layer_poly: LayerSpec = "PolyResdrawing",
@@ -376,11 +333,11 @@ def rhigh(
     layer_block: LayerSpec = "EXTBlockdrawing",
     layer_sal_block: LayerSpec = "SalBlockdrawing",
 ) -> Component:
-    """Create a high-resistance polysilicon resistor.
+    """Create a vertical high-resistance polysilicon resistor (i.e. with dy as its length).
 
     Args:
-        width: Width of the resistor in micrometers.
-        length: Length of the resistor in micrometers.
+        dy: length of the resistor in micrometers.
+        dx: width of the resistor in micrometers.
         resistance: Target resistance in ohms (optional).
         model: Device model name.
         layer_poly: Polysilicon layer.
@@ -399,149 +356,122 @@ def rhigh(
     """
     c = Component()
 
-    # Default parameters
-    rppd_min_width = 0.4
-    rppd_min_length = 0.5
-    sheet_resistance = 300.0
-    gate_poly_end_extension_width = 0.43
+    # Constants
+    RHIGH_MIN_DY = 0.4
+    RHIGH_MIN_DX = 0.5
+    GRID = 0.005
 
-    # Contact parameters
-    cont_width = 0.16
-    cont_length = 0.36
-    cont_space_x = 0.07
-    cont_space_y = 0.20
+    SHEET_RESISTANCE = 300.0
+    GAT_DY = 0.43
 
-    # Metal layer parameters
-    metal_contact_margin_x = 0.05
-    metal_contact_margin_y = 0.05
+    # Fundamental geometry constants
+    METAL_PAD_DY = 0.26
+    METAL_CONTACT_MARGIN = 0.05
+    GAT_METAL_MARGIN = 0.02
 
-    # Blocking layer parameters
-    block_width = 2.18
-    block_length = 0.86
-    block_2_width = 0.96
-    block_2_length = 0.90
+    BLOCK1_MARGIN = 0.18
+    BLOCK2_MARGIN = 0.02
 
-    # Validate dimensions
-    width = max(width, rppd_min_width)
-    length = max(length, rppd_min_length)
+    # Validate
+    dy = max(dy, RHIGH_MIN_DY)
+    dx = max(dx, RHIGH_MIN_DX)
+    dy = round(dy / GRID) * GRID
+    dx = round(dx / GRID) * GRID
 
-    # Grid snap
-    grid = 0.005
-    width = round(width / grid) * grid
-    length = round(length / grid) * grid
-
-    # Calculate resistance if not provided
+    # Resistance calculation
     if resistance is None:
-        n_squares = length / width
-        resistance = n_squares * sheet_resistance
+        n_squares = dy / dx
+        resistance = n_squares * SHEET_RESISTANCE
+    else:
+        n_squares = dy / dx
 
-    # Create resistor body (polysilicon)
-    body_layers = [layer_poly, layer_heat]
-    for layer in body_layers:
-        res_body = gf.components.rectangle(
-            size=(length, width),
-            layer=layer,
-            centered=True,
-        )
-        res_body_ref = c.add_ref(res_body)
-        res_body_ref.move((length / 2, width / 2))
+    # Compute geometry
+    body_origin = (0.0, 0.0)
 
-    # End contact regions (gate polysilicon extensions)
-    upper_contact = gf.components.rectangle(
-        size=(length, gate_poly_end_extension_width),
-        layer=layer_gate,
-    )
-    upper_ref = c.add_ref(upper_contact)
-    upper_ref.move((0, width))
+    # Metal pad sizes
+    metal_pad_dx = dx - 2 * GAT_METAL_MARGIN
+    metal_pad_dy = METAL_PAD_DY
 
-    lower_contact = gf.components.rectangle(
-        size=(length, gate_poly_end_extension_width),
-        layer=layer_gate,
-    )
-    lower_ref = c.add_ref(lower_contact)
-    lower_ref.move((0, -gate_poly_end_extension_width))
+    # Metal pad positions
+    metal_pad_left_x = GAT_METAL_MARGIN
+    metal_pad_upper_y = dy + GAT_DY - metal_pad_dy - GAT_METAL_MARGIN
+    metal_pad_lower_y = -GAT_DY + GAT_METAL_MARGIN
 
-    # Contact regions
-    cont_upper = gf.components.rectangle(
-        size=(cont_length, cont_width),
-        layer=layer_contact,
-    )
-    cont_upper_ref = c.add_ref(cont_upper)
-    cont_upper_ref.move((cont_space_x, width + cont_space_y))
+    # Contacts inside metal pads
+    contact_dx = metal_pad_dx - 2 * METAL_CONTACT_MARGIN
+    contact_dy = metal_pad_dy - 2 * METAL_CONTACT_MARGIN
 
-    cont_lower = gf.components.rectangle(
-        size=(cont_length, cont_width),
-        layer=layer_contact,
-    )
-    cont_lower_ref = c.add_ref(cont_lower)
-    cont_lower_ref.move((cont_space_x, - cont_width - cont_space_y))
+    contact_left_x = metal_pad_left_x + METAL_CONTACT_MARGIN
+    contact_upper_y = metal_pad_upper_y + METAL_CONTACT_MARGIN
+    contact_lower_y = metal_pad_lower_y + METAL_CONTACT_MARGIN
 
-    # Metal layer regions
-    metal_length = cont_length + 2 * metal_contact_margin_x
-    metal_width = cont_width + 2 * metal_contact_margin_y
-    metal_space_x = cont_space_x - metal_contact_margin_x
-    metal_space_y = cont_space_y - metal_contact_margin_y
+    # Blocking layer geometry
+    block1_dx = dx + 2 * BLOCK1_MARGIN
+    block1_dy = dy + 2 * (GAT_DY + BLOCK1_MARGIN)
+    block1_origin = ((dx - block1_dx) / 2, (dy - block1_dy) / 2)
 
-    metal_layers = [layer_metal1_pin, layer_metal1]
+    block2_dx = block1_dx + 2 * BLOCK2_MARGIN
+    block2_dy = dy
+    block2_origin = ((dx - block2_dx) / 2, (dy - block2_dy) / 2)
 
-    for layer in metal_layers:
-        metal_upper = gf.components.rectangle(
-            size=(metal_length, metal_width),
-            layer=layer,
-        )
-        metal_upper_ref = c.add_ref(metal_upper)
-        metal_upper_ref.move((metal_space_x, width + metal_space_y))
+    # Draw resistor body (poly + heat)
+    for ly in (layer_poly, layer_heat):
+        add_rect(c, size=(dx, dy), layer=ly, origin=body_origin)
 
-        metal_lower = gf.components.rectangle(
-            size=(metal_length, metal_width),
-            layer=layer,
-        )
-        metal_lower_ref = c.add_ref(metal_lower)
-        metal_lower_ref.move((metal_space_x, - metal_width - metal_space_y))
+    # Gate extensions
+    gate_size = (dx, GAT_DY)
+    add_rect(c, gate_size, layer_gate, origin=(0.0, dy))
+    add_rect(c, gate_size, layer_gate, origin=(0.0, -GAT_DY))
 
-    # Add blocking layers
-    blocks_1_layers = [layer_block, layer_pSD, layer_nSD]
-    for layer in blocks_1_layers:
-        block = gf.components.rectangle(
-            size=(block_length, block_width),
-            layer=layer,
-        )
-        block_ref = c.add_ref(block)
-        block_ref.move(((length - block_length) / 2, (width - block_width) / 2))
+    # Contacts
+    add_rect(c, (contact_dx, contact_dy), layer_contact, origin=(contact_left_x, contact_upper_y))
+    add_rect(c, (contact_dx, contact_dy), layer_contact, origin=(contact_left_x, contact_lower_y))
 
-    blocks_2_layers = [layer_block, layer_sal_block]
-    for layer in blocks_2_layers:
-        block_2 = gf.components.rectangle(
-            size=(block_2_length, block_2_width),
-            layer=layer,
-        )
-        block_2_ref = c.add_ref(block_2)
-        block_2_ref.move(((length - block_2_length) / 2, (width - block_2_width) / 2))
+    # Metal pads
+    for ly in (layer_metal1_pin, layer_metal1):
+        add_rect(c, (metal_pad_dx, metal_pad_dy), ly, origin=(metal_pad_left_x, metal_pad_upper_y))
+        add_rect(c, (metal_pad_dx, metal_pad_dy), ly, origin=(metal_pad_left_x, metal_pad_lower_y))
 
-    # Add ports
+    # Blocking 1
+    for ly in (layer_block, layer_pSD, layer_nSD):
+        add_rect(c, (block1_dx, block1_dy), ly, origin=block1_origin)
+
+    # Blocking 2
+    for ly in (layer_block, layer_sal_block):
+        add_rect(c, (block2_dx, block2_dy), ly, origin=block2_origin)
+
+    # Ports
+    metal_pad_center_x = metal_pad_left_x + metal_pad_dx / 2.0
+    metal_pad_upper_center_y = metal_pad_upper_y + metal_pad_dy / 2.0
+    metal_pad_lower_center_y = metal_pad_lower_y + metal_pad_dy / 2.0
+
     c.add_port(
         name="P1",
-        center=(-(length / 2 + gate_poly_end_extension_width / 2), 0),
-        width=cont_width,
-        orientation=180,
+        center=(metal_pad_center_x, metal_pad_upper_center_y),
+        width=metal_pad_dx,
+        orientation=90,
         layer=layer_metal1,
-        port_type="electrical")
+        port_type="electrical",
+    )
 
     c.add_port(
         name="P2",
-        center=(length / 2 + gate_poly_end_extension_width / 2, 0),
-        width=cont_width,
-        orientation=0,
+        center=(metal_pad_center_x, metal_pad_lower_center_y),
+        width=metal_pad_dx,
+        orientation=270,
         layer=layer_metal1,
-        port_type="electrical")
+        port_type="electrical",
+    )
 
-    # Add metadata
-    c.info["model"] = model
-    c.info["width"] = width
-    c.info["length"] = length
-    c.info["resistance"] = resistance
-    c.info["sheet_resistance"] = sheet_resistance
-    c.info["n_squares"] = length / width
+    # Metadata
+    c.info.update({
+        "model": model,
+        "dy": dy,
+        "dx": dx,
+        "resistance": resistance,
+        "sheet_resistance": SHEET_RESISTANCE,
+        "n_squares": n_squares,
+    })
 
     return c
 
@@ -555,17 +485,17 @@ if __name__ == "__main__":
     PDK.activate()
 
     # Test the components
-    # c0 = fixed.rsil()  # original
-    # c1 = rsil()  # New
-    # c = xor(c0, c1)
-    # c.show()
+    c0 = fixed.rsil()  # original
+    c1 = rsil()  # New
+    c = xor(c0, c1)
+    c.show()
 
     # c0 = fixed.rppd()  # original
     # c1 = rppd()  # New
     # c = xor(c0, c1)
     # c.show()
 
-    c0 = fixed.rhigh()  # original
-    c1 = rhigh()  # New
-    c = xor(c0, c1)
-    c.show()
+    # c0 = fixed.rhigh()  # original
+    # c1 = rhigh()  # New
+    # c = xor(c0, c1)
+    # c.show()
