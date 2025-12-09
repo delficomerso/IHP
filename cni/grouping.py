@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import pya
 
-from cni.dlo import Box, Tech
+from cni.box import Box
+from cni.tech import Tech
 from cni.physicalComponent import *
 
 

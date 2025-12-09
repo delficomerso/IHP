@@ -104,7 +104,7 @@ include-package-data = true
 "*" = ["*.csv", "*.yaml", "*.yml", "*.gds", "*.lyp", "*.oas", "*.lyt", "*.dat", "*.nc", "*.svg", '*.GDS', "*.json", "*.txt"]
 
 [tool.setuptools.packages.find]
-include = ["ihp"]
+include = ["ihp", "cni"]
 where = ["."]
 
 [tool.tbump]

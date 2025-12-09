@@ -25,6 +25,8 @@ from gdsfactory.technology import LayerLevel, LayerMap, LayerStack
 from gdsfactory.typings import Layer, LayerSpec
 from pydantic import BaseModel
 
+# Import CNI tech for cells2 compatibility
+from cni.tech import Tech as _CNITech
 from ihp.config import PATH
 
 nm = 1e-3
@@ -853,6 +855,9 @@ routing_strategies = dict(
     route_astar=route_astar,
     route_astar_metal=route_astar_metal,
 )
+
+# techParams from CNI layer for cells2 compatibility
+techParams = _CNITech.get("SG13_dev").getTechParams()
 
 if __name__ == "__main__":
     LAYER_VIEWS.to_lyp(PATH.lyp)
