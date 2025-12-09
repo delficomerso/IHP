@@ -49,6 +49,7 @@ from .utility_functions import (
     CbResCalc,
     CbResCurrent,
     CbTapCalc,
+    eng_string,
     eng_string_to_float,
 )
 

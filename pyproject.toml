@@ -12,7 +12,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
-  "gdsfactory~=9.22.0",
+  "gdsfactory~=9.24.0",
   "gplugins[sax]~=2.0.0",
   "doroutes>=0.2.0"
 ]
@@ -69,6 +69,7 @@ python_files = ["tests/*.py"]
 testpaths = ["tests"]
 
 [tool.ruff]
+exclude = ["cni"]
 fix = true
 
 [tool.ruff.lint]
@@ -103,7 +104,7 @@ include-package-data = true
 "*" = ["*.csv", "*.yaml", "*.yml", "*.gds", "*.lyp", "*.oas", "*.lyt", "*.dat", "*.nc", "*.svg", '*.GDS', "*.json", "*.txt"]
 
 [tool.setuptools.packages.find]
-include = ["ihp"]
+include = ["ihp", "cni"]
 where = ["."]
 
 [tool.tbump]

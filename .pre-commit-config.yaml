@@ -17,13 +17,15 @@ repos:
       - id: codespell
         additional_dependencies:
           - tomli
-        exclude: ^(pyproject\.toml|ihp/layers\.yaml|ihp/cells2/ihp_pycell/.*)$
+        exclude: ^(pyproject\.toml|ihp/layers\.yaml|ihp/cells2/ihp_pycell/.*|cni/.*)$
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.12.11"
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --config=pyproject.toml]
+        exclude: ^cni/
       - id: ruff-format
+        exclude: ^cni/
   - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
     rev: v2.15.0
     hooks:

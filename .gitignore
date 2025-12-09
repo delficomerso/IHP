@@ -15,10 +15,11 @@ tests/gds_ref/*.oas
 
 docs/components.rst
 docs/components_plot.rst
+.vscode/
+
 
 # C extensions
 *.so
-*.json
 *.sqlite3
 *.db
 *.pkl

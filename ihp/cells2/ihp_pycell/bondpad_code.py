@@ -19,8 +19,6 @@
 __version__ = "$Revision: #3 $"
 
 
-from cni.dlo import *
-
 from .geometry import *
 from .utility_functions import *
 

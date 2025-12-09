@@ -5,7 +5,7 @@ from typing import Literal
 import gdsfactory as gf
 
 from .. import tech
-from .ihp_pycell import CbCapCalc, eng_string_to_float
+from .ihp_pycell import CbCapCalc, eng_string
 from .ihp_pycell import SVaricap as SVaricapIHP
 from .ihp_pycell import cmim as cmimIHP
 from .ihp_pycell import rfcmim as rfcmimIHP
@@ -46,17 +46,17 @@ def cmim(
         "C": CbCapCalc(
             "C", 0, width * 1e-6, length * 1e-6, "cmim"
         ),  # TODO Is this used?
-        "w": width * 1e-6,  # Width in μm
-        "l": length * 1e-6,  # Length in μm
-        "Cspec": eng_string_to_float(tech.techParams["cmim_caspec"]),  # Number of gates
-        "Wmin": eng_string_to_float(tech.techParams["cmim_minLW"]),
-        "Lmin": eng_string_to_float(tech.techParams["cmim_minLW"]),
-        "Cmax": eng_string_to_float(tech.techParams["cmim_maxC"]),
+        "w": eng_string(width * 1e-6),  # Width as engineering string
+        "l": eng_string(length * 1e-6),  # Length as engineering string
+        "Cspec": tech.techParams["cmim_caspec"],
+        "Wmin": tech.techParams["cmim_minLW"],
+        "Lmin": tech.techParams["cmim_minLW"],
+        "Cmax": tech.techParams["cmim_maxC"],
         "ic": "",
-        "m": 1,  # Multiplier
+        "m": "1",  # Multiplier as string
         "trise": "",
         "guardRingType": guardRingType,
-        "guardRingDistance": guardRingDistance * 1e-6,
+        "guardRingDistance": eng_string(guardRingDistance * 1e-6),
     }
 
     c = generate_gf_from_ihp(
@@ -114,17 +114,15 @@ def rfcmim(
         "C": CbCapCalc(
             "C", 0, width * 1e-6, length * 1e-6, "rfcmim"
         ),  # TODO Is this used?
-        "w": width * 1e-6,  # Width in μm
-        "l": length * 1e-6,  # Length in μm
-        "wfeed": feed_width * 1e-6,
-        "Cspec": eng_string_to_float(
-            tech.techParams["rfcmim_caspec"]
-        ),  # Number of gates
-        "Wmin": eng_string_to_float(tech.techParams["rfcmim_minLW"]),
-        "Lmin": eng_string_to_float(tech.techParams["rfcmim_minLW"]),
-        "Cmax": eng_string_to_float(tech.techParams["rfcmim_maxC"]),
+        "w": eng_string(width * 1e-6),  # Width as engineering string
+        "l": eng_string(length * 1e-6),  # Length as engineering string
+        "wfeed": eng_string(feed_width * 1e-6),
+        "Cspec": tech.techParams["rfcmim_caspec"],
+        "Wmin": tech.techParams["rfcmim_minLW"],
+        "Lmin": tech.techParams["rfcmim_minLW"],
+        "Cmax": tech.techParams["rfcmim_maxC"],
         "ic": "",
-        "m": 1,  # Multiplier
+        "m": "1",  # Multiplier as string
         "trise": "",
     }
 
@@ -191,13 +189,13 @@ def svaricap(
         "cdf_version": tech.techParams["CDFVersion"],
         "Display": "Selected",
         "model": tech.techParams["SVaricap_model"],
-        "w": width,  # Width in μm
-        "l": length,  # Length in μm
+        "w": width,  # Width already as string like "3.74u"
+        "l": length,  # Length already as string like "0.3u"
         "Nx": Nx,
         "bn": "sub!",
         "trise": "",
         "guardRingType": guardRingType,
-        "guardRingDistance": guardRingDistance * 1e-6,
+        "guardRingDistance": eng_string(guardRingDistance * 1e-6),
     }
 
     c = generate_gf_from_ihp(
