@@ -11,15 +11,10 @@ def cmim(
     length: float = 5.0,
     capacitance: float | None = None,
     model: str = "cmim",
-    layer_metal4: LayerSpec = "Metal4drawing",
     layer_metal5: LayerSpec = "Metal5drawing",
     layer_mim: LayerSpec = "MIMdrawing",
-    layer_via4: LayerSpec = "Via4drawing",
     layer_via_mim: LayerSpec = "Vmimdrawing",
     layer_topmetal1: LayerSpec = "TopMetal1drawing",
-    layer_topvia1: LayerSpec = "TopVia1drawing",
-    layer_cap_mark: LayerSpec = "MemCapdrawing",
-    layer_nofill: LayerSpec = "Metal4nofill",
 ) -> Component:
     """Create a MIM (Metal-Insulator-Metal) capacitor.
 
@@ -28,14 +23,9 @@ def cmim(
         length: Length of the capacitor in micrometers.
         capacitance: Target capacitance in fF (optional).
         model: Device model name.
-        layer_metal4: Bottom plate metal layer.
-        layer_metal5: Top plate metal layer.
+        layer_metal5: Bottom plate metal layer.
         layer_mim: MIM dielectric layer.
-        layer_via4: Via layer for top plate connection.
-        layer_topmetal1: Top metal layer for connections.
-        layer_topvia1: Via to top metal layer.
-        layer_cap_mark: Capacitor marker layer.
-        layer_nofill: No metal filler layer.
+        layer_topmetal1: Top metal layer.
 
     Returns:
         Component with MIM capacitor layout.
@@ -164,7 +154,27 @@ def cmim(
     return c
 
 
-def spacing_update_order(n_spacings, n_increments):
+def spacing_update_order(n_spacings: int, n_increments: int) -> list[int]:
+    """
+    The function determines which spacing slots (indices) should receive
+    increments. The last spacing always gets incremented first.
+    Then the middle, depending on whether the number of increments is odd or even.
+    The largest step (gap) between increments is calculated.
+    If the middle was increased, then the next increases start happening one step away.
+    If the middle was not increased, then the increases start step//2 away from it.
+
+    Parameters
+    ----------
+    n_spacings : int
+        Total number of spacing elements, equal to the number of pins -1.
+    n_increments : int
+        Number of spacing increments to distribute, in order for the distance from the edges to be fixed on all sides.
+
+    Returns
+    -------
+    list[int]
+        List of spacing indices indicating where increments should be applied.
+    """
     if n_increments == 0:
         return []
 
@@ -193,11 +203,11 @@ def spacing_update_order(n_spacings, n_increments):
 
     k = n_increments // 2
 
-    # 1️⃣ Maximum step IGNORING index 0
+    # Maximum step IGNORING index 0
     step = min(left // k, (n_spacings - 1 - right) // k)
     step = max(step, 1)
 
-    # 2️⃣ Try normal symmetric placement
+    # Try normal symmetric placement
     def generate(start_offset):
         indices = []
         for j in range(k):
@@ -207,18 +217,16 @@ def spacing_update_order(n_spacings, n_increments):
         return indices
 
     if center_appended:
-        print(n_spacings, n_increments)
         start_offset = step
     else:
         start_offset = step // 2
     # Mode A: start at ±step
     candidates = generate(start_offset=start_offset)
-    print(candidates)
     if all(i != 0 for i in candidates):
         chosen.extend(candidates)
         return chosen
 
-    # 4️⃣ Guaranteed fallback (should never fail in valid geometry)
+    # Guaranteed fallback (should never fail in valid geometry)
     for j in range(1, k + 1):
         chosen.append(left - j)
         chosen.append(right + j)
@@ -227,17 +235,49 @@ def spacing_update_order(n_spacings, n_increments):
 
 
 def pin_placement(
-    c,
-    length,
-    width,
-    pin_dimension,
-    pin_spacing_x,
-    pin_spacing_y,
-    pin_extension,
-    bottom_left_x,
-    bottom_left_y,
-    pin_layer,
-):
+    c: gf.Component,
+    length: float,
+    width: float,
+    pin_dimension: float,
+    pin_spacing_x: float,
+    pin_spacing_y: float,
+    pin_extension: float,
+    bottom_left_x: float,
+    bottom_left_y: float,
+    pin_layer: LayerSpec,
+) -> None:
+    """
+    This function places a 2D pin array on a rectangle within a component's layer,
+    so that the distance of the external rows and columns from the edges is fixed.
+    First, the number of pins of specified dimension, spacing, and distance from edges are defined.
+
+    The goal is for all external rows and columns to have a fixed distance from the edges.
+    So the next step is to increase, separately, the spacings in x and y direction, in order to bring the last row and column closer to the edge.
+
+    Finally, if there is still space left, some of the spacings are increased by 0.005 until the goal is met.
+
+    Parameters
+    ----------
+    c : gf.Component
+        The GDSFactory component on which the array is placed.
+    length : float
+        Length (x-dimension) of the region which contains the pin array.
+    width : float
+        Width (y-dimension) of the region which contains the pin array.
+    pin_dimension : float
+        Dimension, x and y, of the individual square pin.
+    pin_spacing_x: float
+        Distance between the right edge of pin in column n, with the left edge of pin in column n+1.
+    pin_spacing_y: float
+        Distance between the top edge of pin in row m, with the bottom edge of pin in column m+1.
+    pin_extension: float
+        Distance between first column from left edge, last column from right edge, first (bottom) row and bottom edge, and last (top) row and top edge.
+    bottom_left_x: float
+        Minimum x-coordinate of the array that contains the pins.
+    bottom_left_y: float
+        Minimum y-coordinate of the array that contains the pins.
+
+    """
     n_pin_x = 1
     n_pin_y = 1
 
@@ -320,8 +360,8 @@ def pin_placement(
 
 @gf.cell
 def rfcmim(
-    width: float = 10.0,
-    length: float = 10.0,
+    width: float = 6.99,
+    length: float = 6.99,
     capacitance: float | None = None,
     model: str = "rfcmim",
     layer_activ: LayerSpec = "Activdrawing",
@@ -789,17 +829,14 @@ if __name__ == "__main__":
     # Test the components
     width = 6.99
     length = 6.99
-    # c0 = cells2.cmim(width=width, length=length)  # original
-    # c1 = cmim(width=width, length=length)  # New
-    # # c = gf.grid([c0, c1], spacing=100)
+    c0 = cells2.cmim(width=width, length=length)  # original
+    c1 = cmim(width=width, length=length)  # New
+    # c = gf.grid([c0, c1], spacing=100)
 
-    # c = xor(c0, c1)
-    # c.show()
-    # c0.show()
-    # c1.show()
+    # c_cmim = xor(c0, c1)
+    # c_cmim.show()
 
     c0_rf = cells2.rfcmim(width=width, length=length)  # original
     c1_rf = rfcmim(width=width, length=length)  # New
-    # c = gf.grid([c0, c1], spacing=100)
-    c_rf = xor(c0_rf, c1_rf, ignore_sliver_differences=True)
-    c_rf.show()
+    c_rfcmim = xor(c0_rf, c1_rf)
+    c_rfcmim.show()
