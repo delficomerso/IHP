@@ -373,36 +373,42 @@ def rfcmim(
     c = Component()
 
     # Design rules for RF capacitor
-    via_dim = 0.42  # Extracted from PDK
-    via_spacing = 0.42  # Extracted from PDK
+    via_size = 0.42  # Extracted from PDK
+    via_dist = 0.42  # Extracted from PDK
     via_extension = 0.78  # Extracted from PDK
-    cont_dim = 0.16  # Contact dimension from PDK
-    cont_spacing_x = 0.18  # Contact spacing from PDK 0.185
-    cont_spacing_y = 0.18  # Contact spacing from PDK 0.215
-    cont_extension = 0.36  # Contact extension from PDK
+    cont_size = 0.16  # Contact dimension from PDK
+    cont_dist = 0.18  # Contact spacing from PDK
+    # tm_over = 0.42
+
+    mim_over = 0.6
+    via_over = 0.36  # Contact extension from PDK
+
     psd_extra_extension = 0.03  # Additional extension for pSD layer
     pwell_extension = 3.0
     activ_external_extension = 5.6
     activ_internal_extension = 3.6
-    metal5_extension = 0.6
     caspec = 1.5e-15  # Value from cni.sg13g2.json
     cpspec = 4.0e-17  # Value from cni.sg13g2.json
     lwd = 0.01  # um. Value from cni.sg13g2.json
 
     layer_activ: LayerSpec = "Activdrawing"
+    layer_activ_noqrc: LayerSpec = "Activnoqrc"
     layer_cont: LayerSpec = "Contdrawing"
     layer_metal1: LayerSpec = "Metal1drawing"
+    layer_metal1_noqrc: LayerSpec = "Metal1noqrc"
     layer_metal1_pin: LayerSpec = "Metal1pin"
-    layer_metal2: LayerSpec = "Metal2drawing"
+    layer_metal2_noqrc: LayerSpec = "Metal2noqrc"
     layer_psd: LayerSpec = "pSDdrawing"
-    layer_metal3: LayerSpec = "Metal3drawing"
+    layer_metal3_noqrc: LayerSpec = "Metal3noqrc"
     layer_mim: LayerSpec = "MIMdrawing"
-    layer_pwell: LayerSpec = "PWelldrawing"
-    layer_metal4: LayerSpec = "Metal4drawing"
+    layer_pwellblock: LayerSpec = "PWellblock"
+    layer_metal4_noqrc: LayerSpec = "Metal4noqrc"
     layer_text: LayerSpec = "TEXTdrawing"
     layer_metal5: LayerSpec = "Metal5drawing"
+    layer_metal5_noqrc: LayerSpec = "Metal5noqrc"
     layer_metal5_pin: LayerSpec = "Metal5pin"
     layer_topmetal1: LayerSpec = "TopMetal1drawing"
+    layer_topmetal1_noqrc: LayerSpec = "TopMetal1noqrc"
     layer_topmetal1_pin: LayerSpec = "TopMetal1pin"
     layer_via_mim: LayerSpec = "Vmimdrawing"
 
@@ -416,14 +422,6 @@ def rfcmim(
     weff = width + lwd
     capacitance = leff * weff * caspec + 2.0 * (leff + weff) * cpspec
 
-    # MIM dielectric layer
-    c.add_ref(
-        gf.components.rectangle(
-            size=(length, width),
-            layer=layer_mim,
-        )
-    )
-
     # The top plate is an extension of the via array, so we create it after the vias.
     # First, the number of vias needs to be defined. They are squares of via_dim, and spacing via_spacing.
     # Let's assume we have a grid of n_x by n_y vias. The top plate will extend this array by via_extension on each side.
@@ -431,31 +429,136 @@ def rfcmim(
     # L_top = n_x*via_dim + (n_x-1)*via_spacing + 2*via_extension = 3*n_x*via_dim, for spacing = 2*via_dim and extension = via_dim.
     # The PDK gives the maximum vias for which the top plate dimensions do not exceed the insulator dimensions by more than 0.115um.
 
+    # 1 Vias
     pin_placement(
         c,
         length,
         width,
-        via_dim,
-        via_spacing,
-        via_spacing,
+        via_size,
+        via_dist,
+        via_dist,
         via_extension,
         0,
         0,
         layer_via_mim,
     )
 
-    # ----------------
-    # Active Drawing
-    # ----------------
-    activ = c << gf.components.rectangle(
+    # 2 MIM dielectric layer
+    c.add_ref(
+        gf.components.rectangle(
+            size=(length, width),
+            layer=layer_mim,
+        )
+    )
+    # 3 TopMetal1 internal
+    top_metal1_internal = c << gf.components.rectangle(
+        size=(length - 2 * via_over, width - 2 * via_over),
+        layer=layer_topmetal1,
+    )
+    top_metal1_internal.xmin = via_over
+    top_metal1_internal.ymin = via_over
+
+    # 4 Metal5 internal
+    metal5_internal = c << gf.components.rectangle(
+        size=(length + 2 * mim_over, width + 2 * mim_over),
+        layer=layer_metal5,
+    )
+    metal5_internal.xmin = -mim_over
+    metal5_internal.ymin = -mim_over
+
+    # 5 PWellblock
+    pwell = c << gf.components.rectangle(
+        size=(length + 2 * pwell_extension, width + 2 * pwell_extension),
+        layer=layer_pwellblock,
+    )
+    pwell.xmin = -pwell_extension
+    pwell.ymin = -pwell_extension
+
+    # 6 More TopMetal1
+    top_metal1_line = c << gf.components.rectangle(
+        size=(activ_external_extension + via_over, feed_width),
+        layer=layer_topmetal1,
+    )
+    top_metal1_line.xmin = -activ_external_extension
+    top_metal1_line.ymin = width / 2 - feed_width / 2
+
+    top_metal1_pin = c << gf.components.rectangle(
+        size=(activ_external_extension - activ_internal_extension, feed_width),
+        layer=layer_topmetal1_pin,
+    )
+    top_metal1_pin.xmin = -activ_external_extension
+    top_metal1_pin.ymin = width / 2 - feed_width / 2
+
+    # Noqrc layers
+    activ_noqrc = c << gf.components.rectangle(
         size=(
             length + 2 * activ_external_extension,
             width + 2 * activ_external_extension,
         ),
-        layer=layer_activ,
+        layer=layer_activ_noqrc,
     )
-    activ.xmin = -activ_external_extension
-    activ.ymin = -activ_external_extension
+    activ_noqrc.xmin = -activ_external_extension
+    activ_noqrc.ymin = -activ_external_extension
+
+    metal1_noqrc = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            width + 2 * activ_external_extension,
+        ),
+        layer=layer_metal1_noqrc,
+    )
+    metal1_noqrc.xmin = -activ_external_extension
+    metal1_noqrc.ymin = -activ_external_extension
+
+    metal2_noqrc = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            width + 2 * activ_external_extension,
+        ),
+        layer=layer_metal2_noqrc,
+    )
+    metal2_noqrc.xmin = -activ_external_extension
+    metal2_noqrc.ymin = -activ_external_extension
+
+    metal3_noqrc = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            width + 2 * activ_external_extension,
+        ),
+        layer=layer_metal3_noqrc,
+    )
+    metal3_noqrc.xmin = -activ_external_extension
+    metal3_noqrc.ymin = -activ_external_extension
+
+    metal4_noqrc = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            width + 2 * activ_external_extension,
+        ),
+        layer=layer_metal4_noqrc,
+    )
+    metal4_noqrc.xmin = -activ_external_extension
+    metal4_noqrc.ymin = -activ_external_extension
+
+    metal5_noqrc = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            width + 2 * activ_external_extension,
+        ),
+        layer=layer_metal5_noqrc,
+    )
+    metal5_noqrc.xmin = -activ_external_extension
+    metal5_noqrc.ymin = -activ_external_extension
+
+    top_metal1_noqrc = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            width + 2 * activ_external_extension,
+        ),
+        layer=layer_topmetal1_noqrc,
+    )
+    top_metal1_noqrc.xmin = -activ_external_extension
+    top_metal1_noqrc.ymin = -activ_external_extension
 
     c.add_polygon(
         [
@@ -464,6 +567,10 @@ def rfcmim(
             (length + activ_internal_extension, width + activ_internal_extension),
             (length + activ_internal_extension, width / 2 + feed_width / 2),
             (length + activ_external_extension, width / 2 + feed_width / 2),
+            (length + activ_external_extension, width + activ_external_extension),
+            (-activ_external_extension, width + activ_external_extension),
+            (-activ_external_extension, -activ_external_extension),
+            (length + activ_external_extension, -activ_external_extension),
             (length + activ_external_extension, width / 2 - feed_width / 2),
             (length + activ_internal_extension, width / 2 - feed_width / 2),
             (length + activ_internal_extension, -activ_internal_extension),
@@ -471,119 +578,13 @@ def rfcmim(
         layer=layer_activ,
     )
 
-    # ----------------
-    # Cont Drawing
-    # ----------------
+    metal5_pin = c << gf.components.rectangle(
+        size=(activ_external_extension - activ_internal_extension, feed_width),
+        layer=layer_metal5_pin,
+    )
+    metal5_pin.xmin = length + activ_internal_extension
+    metal5_pin.ymin = width / 2 - feed_width / 2
 
-    # Top extension
-    pin_placement(
-        c,
-        length + 2 * activ_external_extension,
-        activ_external_extension - activ_internal_extension,
-        cont_dim,
-        cont_spacing_x,
-        cont_spacing_y,
-        cont_extension,
-        -activ_external_extension,
-        width + activ_internal_extension,
-        layer_cont,
-    )
-    # Bottom extension
-    pin_placement(
-        c,
-        length + 2 * activ_external_extension,
-        activ_external_extension - activ_internal_extension,
-        cont_dim,
-        cont_spacing_x,
-        cont_spacing_y,
-        cont_extension,
-        -activ_external_extension,
-        -activ_external_extension,
-        layer_cont,
-    )
-
-    # Left extension
-    pin_placement(
-        c,
-        activ_external_extension - activ_internal_extension,
-        width + 2 * activ_internal_extension,
-        cont_dim,
-        cont_spacing_x,
-        cont_spacing_y,
-        cont_extension,
-        -activ_external_extension,
-        -activ_internal_extension,
-        layer_cont,
-    )
-    # Right bottom extension
-    pin_placement(
-        c,
-        activ_external_extension - activ_internal_extension,
-        width / 2 + activ_internal_extension - feed_width / 2,
-        cont_dim,
-        cont_spacing_x,
-        cont_spacing_y,
-        cont_extension,
-        length + activ_internal_extension,
-        -activ_internal_extension,
-        layer_cont,
-    )
-    # Right top extension
-    pin_placement(
-        c,
-        activ_external_extension - activ_internal_extension,
-        width / 2 + activ_internal_extension - feed_width / 2,
-        cont_dim,
-        cont_spacing_x,
-        cont_spacing_y,
-        cont_extension,
-        length + activ_internal_extension,
-        width / 2 + feed_width / 2,
-        layer_cont,
-    )
-
-    # ----------------
-    # Metal 1
-    # ----------------
-    metal1_drawing = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            width + 2 * activ_external_extension,
-        ),
-        layer=layer_metal1,
-    )
-    metal1_drawing.xmin = -activ_external_extension
-    metal1_drawing.ymin = -activ_external_extension
-
-    # ----------------
-    # Metal 1 pin
-    # ----------------
-    metal1_pin = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            activ_external_extension - activ_internal_extension,
-        ),
-        layer=layer_metal1_pin,
-    )
-    metal1_pin.xmin = -activ_external_extension
-    metal1_pin.ymin = -activ_external_extension
-
-    # ----------------
-    # Metal 2
-    # ----------------
-    metal2_drawing = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            width + 2 * activ_external_extension,
-        ),
-        layer=layer_metal2,
-    )
-    metal2_drawing.xmin = -activ_external_extension
-    metal2_drawing.ymin = -activ_external_extension
-
-    # ----------------
-    # pSD
-    # ----------------
     c.add_polygon(
         [
             (
@@ -630,103 +631,113 @@ def rfcmim(
         layer=layer_psd,
     )
 
-    # ----------------
-    # Metal 3
-    # ----------------
-    metal3_drawing = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            width + 2 * activ_external_extension,
-        ),
-        layer=layer_metal3,
-    )
-    metal3_drawing.xmin = -activ_external_extension
-    metal3_drawing.ymin = -activ_external_extension
-
-    # ----------------
-    # PWell
-    # ----------------
-    pwell = c << gf.components.rectangle(
-        size=(length + 2 * pwell_extension, width + 2 * pwell_extension),
-        layer=layer_pwell,
-    )
-    pwell.xmin = -pwell_extension
-    pwell.ymin = -pwell_extension
-    # ----------------
-    # Metal 4
-    # ----------------
-    metal4_drawing = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            width + 2 * activ_external_extension,
-        ),
-        layer=layer_metal4,
-    )
-    metal4_drawing.xmin = -activ_external_extension
-    metal4_drawing.ymin = -activ_external_extension
-
-    # ----------------
-    # Metal 5
-    # ----------------
-    metal5_drawing = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            width + 2 * activ_external_extension,
-        ),
-        layer=layer_metal5,
-    )
-    metal5_drawing.xmin = -activ_external_extension
-    metal5_drawing.ymin = -activ_external_extension
-
-    metal5_internal = c << gf.components.rectangle(
-        size=(length + 2 * metal5_extension, width + 2 * metal5_extension),
-        layer=layer_metal5,
-    )
-    metal5_internal.xmin = -metal5_extension
-    metal5_internal.ymin = -metal5_extension
     c.add_polygon(
         [
-            (length + metal5_extension, width / 2 + feed_width / 2),
-            (length + metal5_extension, width / 2 - feed_width / 2),
+            (-activ_internal_extension, -activ_internal_extension),
+            (-activ_internal_extension, width + activ_internal_extension),
+            (length + activ_internal_extension, width + activ_internal_extension),
+            (length + activ_internal_extension, width / 2 + feed_width / 2),
+            (length + activ_external_extension, width / 2 + feed_width / 2),
+            (length + activ_external_extension, width + activ_external_extension),
+            (-activ_external_extension, width + activ_external_extension),
+            (-activ_external_extension, -activ_external_extension),
+            (length + activ_external_extension, -activ_external_extension),
+            (length + activ_external_extension, width / 2 - feed_width / 2),
+            (length + activ_internal_extension, width / 2 - feed_width / 2),
+            (length + activ_internal_extension, -activ_internal_extension),
+        ],
+        layer=layer_metal1,
+    )
+
+    # Top extension
+    pin_placement(
+        c,
+        length + 2 * activ_external_extension,
+        activ_external_extension - activ_internal_extension,
+        cont_size,
+        cont_dist,
+        cont_dist,
+        via_over,
+        -activ_external_extension,
+        width + activ_internal_extension,
+        layer_cont,
+    )
+    # Bottom extension
+    pin_placement(
+        c,
+        length + 2 * activ_external_extension,
+        activ_external_extension - activ_internal_extension,
+        cont_size,
+        cont_dist,
+        cont_dist,
+        via_over,
+        -activ_external_extension,
+        -activ_external_extension,
+        layer_cont,
+    )
+
+    # Left extension
+    pin_placement(
+        c,
+        activ_external_extension - activ_internal_extension,
+        width + 2 * activ_internal_extension,
+        cont_size,
+        cont_dist,
+        cont_dist,
+        via_over,
+        -activ_external_extension,
+        -activ_internal_extension,
+        layer_cont,
+    )
+    # Right bottom extension
+    pin_placement(
+        c,
+        activ_external_extension - activ_internal_extension,
+        width / 2 + activ_internal_extension - feed_width / 2,
+        cont_size,
+        cont_dist,
+        cont_dist,
+        via_over,
+        length + activ_internal_extension,
+        -activ_internal_extension,
+        layer_cont,
+    )
+    # Right top extension
+    pin_placement(
+        c,
+        activ_external_extension - activ_internal_extension,
+        width / 2 + activ_internal_extension - feed_width / 2,
+        cont_size,
+        cont_dist,
+        cont_dist,
+        via_over,
+        length + activ_internal_extension,
+        width / 2 + feed_width / 2,
+        layer_cont,
+    )
+
+    # ----------------
+    # Metal 1 pin
+    # ----------------
+    metal1_pin = c << gf.components.rectangle(
+        size=(
+            length + 2 * activ_external_extension,
+            activ_external_extension - activ_internal_extension,
+        ),
+        layer=layer_metal1_pin,
+    )
+    metal1_pin.xmin = -activ_external_extension
+    metal1_pin.ymin = -activ_external_extension
+
+    c.add_polygon(
+        [
+            (length + mim_over, width / 2 + feed_width / 2),
+            (length + mim_over, width / 2 - feed_width / 2),
             (length + activ_external_extension, width / 2 - feed_width / 2),
             (length + activ_external_extension, width / 2 + feed_width / 2),
         ],
         layer=layer_metal5,
     )
-
-    metal5_pin = c << gf.components.rectangle(
-        size=(activ_external_extension - activ_internal_extension, feed_width),
-        layer=layer_metal5_pin,
-    )
-    metal5_pin.xmin = length + activ_internal_extension
-    metal5_pin.ymin = width / 2 - feed_width / 2
-
-    # ----------------
-    # Top Metal 1
-    # ----------------
-    top_metal1_drawing = c << gf.components.rectangle(
-        size=(
-            length + 2 * activ_external_extension,
-            width + 2 * activ_external_extension,
-        ),
-        layer=layer_topmetal1,
-    )
-    top_metal1_drawing.xmin = -activ_external_extension
-    top_metal1_drawing.ymin = -activ_external_extension
-
-    top_metal1_internal = c << gf.components.rectangle(
-        size=(length - 2 * cont_extension, width - 2 * cont_extension),
-        layer=layer_topmetal1,
-    )
-    top_metal1_internal.xmin = cont_extension
-    top_metal1_internal.ymin = cont_extension
-
-    top_metal1_pin = c << gf.components.rectangle(
-        size=(activ_external_extension - activ_internal_extension, feed_width),
-        layer=layer_topmetal1_pin,
-    )
-    top_metal1_pin.xmin = -activ_external_extension
-    top_metal1_pin.ymin = width / 2 - feed_width / 2
 
     # Add ports
     c.add_port(
@@ -815,9 +826,9 @@ if __name__ == "__main__":
     # Test the components
     width = 6.99
     length = 6.99
-    c0 = cells2.cmim(width=width, length=length)  # original
-    c1 = cmim(width=width, length=length)  # New
-    # c = gf.grid([c0, c1], spacing=100)
+    # c0 = cells2.cmim(width=width, length=length)  # original
+    # c1 = cmim(width=width, length=length)  # New
+    # # c = gf.grid([c0, c1], spacing=100)
 
     # c_cmim = xor(c0, c1)
     # c_cmim.show()
