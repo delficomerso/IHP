@@ -6,11 +6,16 @@ import gdsfactory as gf
 from gdsfactory import Component
 from gdsfactory.typings import LayerSpec
 
+from cni.tech import Tech
+
+tech_name = "SG13_dev"
+tech = Tech.get("SG13_dev").getTechParams()
+
 
 @gf.cell
 def cmim(
-    width: float = 5.0,
-    length: float = 5.0,
+    width: float = 6.99,
+    length: float = 6.99,
 ) -> Component:
     """Create a MIM (Metal-Insulator-Metal) capacitor.
 
@@ -24,12 +29,11 @@ def cmim(
     c = Component()
 
     # Design rules
-    mim_min_size = 0.5
-    via_dim = 0.42  # Extracted from PDK
-    via_spacing = 2 * via_dim  # Extracted from PDK
-    via_extension = via_dim  # Extracted from PDK
-    bottom_plate_extension = 0.6  # Extracted from PDK
-    cap_density = 1.5  # fF/um^2 (example value)
+    epsilon = tech["epsilon1"]
+    cont_size = tech["TV1_a"]
+    cont_over = tech["Mim_d"]
+    cont_dist = 0.84  # hardcoded in IHP PDK
+    cap_density = 1.5
 
     # Layers
     layer_metal5: LayerSpec = "Metal5drawing"
@@ -37,28 +41,40 @@ def cmim(
     layer_via_mim: LayerSpec = "Vmimdrawing"
     layer_topmetal1: LayerSpec = "TopMetal1drawing"
 
-    # Validate dimensions
-    width = max(width, mim_min_size)
-    length = max(length, mim_min_size)
+    # how many vias?
+    xanz = (width - cont_over - cont_over + cont_dist) // (
+        cont_size + cont_dist
+    ) + epsilon
+    # width for vias
+    w1 = xanz * (cont_size + cont_dist) - cont_dist + cont_over + cont_over
+    # offset to first via
+    xoffset = tog((width - w1) / 2)
 
-    # Grid snap
-    grid = 0.005
-    width = round(width / grid) * grid
-    length = round(length / grid) * grid
+    yanz = (length - cont_over - cont_over + cont_dist) // (
+        cont_size + cont_dist
+    ) + epsilon
+    l1 = yanz * (cont_size + cont_dist) - cont_dist + cont_over + cont_over
+    yoffset = tog((length - l1) / 2)
 
-    # Calculate capacitance
-    capacitance = width * length * cap_density
+    ycont_cnt = cont_over + yoffset
+    # draw vias
+    while ycont_cnt + cont_size + cont_over <= length + epsilon:
+        xcont_cnt = cont_over + xoffset
+        while xcont_cnt + cont_size + cont_over <= width + epsilon:
+            c.add_ref(
+                gf.components.rectangle(
+                    size=(cont_size, cont_size),
+                    layer=layer_via_mim,
+                )
+            ).move((xcont_cnt, ycont_cnt))
 
-    # Bottom plate (Metal4)
-    bottom_plate_width = width + 2 * bottom_plate_extension
-    bottom_plate_length = length + 2 * bottom_plate_extension
+            xcont_cnt = xcont_cnt + cont_size + cont_dist
 
-    bottom_plate = c << gf.components.rectangle(
-        size=(bottom_plate_width, bottom_plate_length),
-        layer=layer_metal5,
-    )
-    bottom_plate.xmin = -bottom_plate_extension
-    bottom_plate.ymin = -bottom_plate_extension
+        ycont_cnt = ycont_cnt + cont_size + cont_dist
+
+    # TopMetal1
+    xcont_cnt = xcont_cnt + tech["TV1_d"] - cont_dist
+    ycont_cnt = ycont_cnt + tech["TV1_d"] - cont_dist
 
     # MIM dielectric layer
     c.add_ref(
@@ -68,64 +84,36 @@ def cmim(
         )
     )
 
-    # The top plate is an extension of the via array, so we create it after the vias.
-    # First, the number of vias needs to be defined. They are squares of via_dim, and spacing via_spacing.
-    # Let's assume we have a grid of n_x by n_y vias. The top plate will extend this array by via_extension on each side.
-    # So the length of the top plate will be:
-    # L_top = n_x*via_dim + (n_x-1)*via_spacing + 2*via_extension = 3*n_x*via_dim, for spacing = 2*via_dim and extension = via_dim.
-    # The PDK gives the maximum vias for which the top plate dimensions do not exceed the insulator dimensions by more than 0.115um.
-
-    # Via array for top plate connection
-    n_vias_x = 1
-    n_vias_y = 1
-
-    top_electrode_width = 3 * n_vias_x * via_dim
-    top_electrode_length = 3 * n_vias_y * via_dim
-
-    # This condition was found empirically to match the PDK layout
-    while top_electrode_width + 3 * via_dim < width + 0.115:
-        n_vias_x += 1
-        top_electrode_width = 3 * n_vias_x * via_dim
-    while top_electrode_length + 3 * via_dim < length + 0.115:
-        n_vias_y += 1
-        top_electrode_length = 3 * n_vias_y * via_dim
-
-    for i in range(n_vias_x):
-        for j in range(n_vias_y):
-            # The bottom left corner of the top electrode is at (width - top_electrode_width)/2 - 0.005, (length - top_electrode_length)/2 - 0.005
-            x = (
-                (width - top_electrode_width) / 2
-                - 0.005
-                + via_extension
-                + i * (via_dim + via_spacing)
-            )
-            y = (
-                (length - top_electrode_length) / 2
-                - 0.005
-                + via_extension
-                + j * (via_dim + via_spacing)
-            )
-
-            via = gf.components.rectangle(
-                size=(via_dim, via_dim),
-                layer=layer_via_mim,
-            )
-            via_ref = c.add_ref(via)
-            via_ref.move((x, y))
+    x1 = tech["Mim_d"] - tech["TV1_d"] + xoffset
+    x2 = xcont_cnt
+    y1 = tech["Mim_d"] - tech["TV1_d"] + yoffset
+    y2 = ycont_cnt
 
     # Top plate (Metal5)
-    top_plate = c << gf.components.rectangle(
-        size=(top_electrode_width, top_electrode_length),
-        layer=layer_topmetal1,
-    )
-    top_plate.xmin = (width - top_electrode_width) / 2 - 0.005
-    top_plate.ymin = (length - top_electrode_length) / 2 - 0.005
+    c.add_ref(
+        gf.components.rectangle(
+            size=(x2 - x1, y2 - y1),
+            layer=layer_topmetal1,
+        )
+    ).move((x1, y1))
+
+    # Calculate capacitance
+    capacitance = width * length * cap_density
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(width + 2 * tech["Mim_c"], length + 2 * tech["Mim_c"]),
+            layer=layer_metal5,
+        )
+    ).move((-tech["Mim_c"], -tech["Mim_c"]))
 
     # Add ports
     c.add_port(
         name="B",
         center=(width / 2, length / 2),
-        width=width + 2 * bottom_plate_extension,
+        width=min(
+            width + 2 * tech["Mim_c"], length + 2 * tech["Mim_c"]
+        ),  # because ports_on_short_side is True
         orientation=0,
         layer=layer_metal5,
         port_type="electrical",
@@ -133,8 +121,8 @@ def cmim(
 
     c.add_port(
         name="T",
-        center=(top_plate.x, top_plate.y),
-        width=top_electrode_width,
+        center=((x2 + x1) / 2, (y2 + y1) / 2),
+        width=min(x2 - x1, y2 - y1),  # because ports_on_short_side is True
         orientation=180,
         layer=layer_topmetal1,
         port_type="electrical",
@@ -716,16 +704,20 @@ if __name__ == "__main__":
     PDK.activate()
 
     # Test the components
-    width = 6.99
-    length = 6.99
-    # c0 = cells2.cmim(width=width, length=length)  # original
-    # c1 = cmim(width=width, length=length)  # New
-    # # c = gf.grid([c0, c1], spacing=100)
+    width = 9.5
+    length = 8
+    c0 = cells2.cmim(width=width, length=length)  # original
+    c1 = cmim(width=width, length=length)  # New
 
-    # c_cmim = xor(c0, c1)
-    # c_cmim.show()
+    print(c0.ports)
 
-    c0_rf = cells2.rfcmim(width=width, length=length)  # original
-    c1_rf = rfcmim(width=width, length=length)  # New
-    c_rfcmim = xor(c0_rf, c1_rf)
-    c_rfcmim.show()
+    print(c1.ports)
+
+    c_cmim = xor(c0, c1)
+    c_cmim.draw_ports()
+    c_cmim.show()
+
+    # c0_rf = cells2.rfcmim(width=width, length=length)  # original
+    # c1_rf = rfcmim(width=width, length=length)  # New
+    # c_rfcmim = xor(c0_rf, c1_rf)
+    # c_rfcmim.show()
