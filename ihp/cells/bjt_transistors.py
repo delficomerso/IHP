@@ -53,7 +53,11 @@ def npn13G2(
     def _snap_width_to_grid(width_um: float) -> float:
         """Snap port width to the nearest multiple of 0.002 um (2 DBU = 0.002 um).
 
-        Ensures width is > 0 and aligns to kfactory grid requirement.
+        Args:
+            width_um: Port width in microns.
+
+        Returns:
+            Width snapped to the nearest valid grid multiple.
         """
         grid = 0.002
         w = max(width_um, grid)
