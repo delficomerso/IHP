@@ -1839,6 +1839,541 @@ def npn13G2V(
     return c
 
 
+def tog(x: float) -> float:
+    SG13_GRID = 0.005
+    SG13_EPSILON = 0.001
+    SG13_IGRID = 1.0 / SG13_GRID
+    return fix(x * SG13_IGRID + SG13_EPSILON) * SG13_GRID
+
+
+def contactArray(
+    c: gf.Component,
+    length: float,
+    width: float,
+    contactLayer: LayerSpec,
+    xl: float,
+    yl: float,
+    ox: float,
+    oy: float,
+    ws: float,
+    ds: float,
+) -> None:
+    """
+    Distributes as many square contact of size ws, into a rectangle of (length, width), with distances >= ds.
+    The distances are adjusted so that the outer contacts have fixed distances ox and oy from the sides of the rectangle.
+
+    Args:
+        c : gf.Component
+            The GDSFactory component on which the array is placed.
+        length : float
+            Length (x-dimension) of the region which contains the pin array.
+        width : float
+            Width (y-dimension) of the region which contains the pin array.
+        xl: float
+            Minimum x-coordinate of the array that contains the pins.
+        yl: float
+            Minimum y-coordinate of the array that contains the pins.
+        ox: float
+            Distance from edge in x direction.
+        oy: float
+            Distance from edge in y direction.
+        ws : float
+            Dimension, x and y, of the individual square contact.
+        ds: float
+            Distance between first column from left edge, last column from right edge, first (bottom) row and bottom edge, and last (top) row and top edge.
+
+    """
+    eps = tech["epsilon1"]
+
+    nx = math.floor((length - ox * 2 + ds) / (ws + ds) + eps)
+
+    dsx = 0
+    if nx == 1:
+        dsx = 0
+    else:
+        dsx = (length - ox * 2 - ws * nx) / (nx - 1)
+
+    ny = math.floor((width - oy * 2 + ds) / (ws + ds) + eps)
+
+    dsy = 0
+    if ny == 1:
+        dsy = 0
+    else:
+        dsy = (width - oy * 2 - ws * ny) / (ny - 1)
+
+    x = 0
+    if nx == 1:
+        x = (length - ws) / 2
+    else:
+        x = ox
+
+    for _ in range(int(nx)):
+        # for(i=1; i<=nx; i++) {
+        y = 0
+        if ny == 1:
+            y = (width - ws) / 2
+        else:
+            y = oy
+
+        for _ in range(int(ny)):
+            # for(j=1; j<=ny; j++) {
+            contact_ref = c << gf.components.rectangle(
+                size=(ws, ws),
+                layer=contactLayer,
+            )
+            contact_ref.move((tog(x) + xl, tog(y) + yl))
+
+            y = y + ws + dsy
+
+        x = x + ws + dsx
+
+
+@gf.cell
+def pnpMPA(length: float = 2, width: float = 0.7) -> gf.Component:
+    """Returns the IHP pnpMPA BJT transistor as a gdsfactory Component.
+
+    This function generates a layout for a PNP transistor using the IHP process.
+    The geometry of the transistor is defined by its width and length.
+
+    Args:
+        length: Length of the transistor, in microns.
+        width: Width of the transistor, in microns.
+
+    Returns:
+        gdsfactory.Component: The generated pnpMPA transistor layout.
+    """
+
+    c = gf.Component()
+
+    SG13_GRID = tech["grid"]
+    SG13_IGRID = 1.0 / SG13_GRID
+    epsilon = tech["epsilon1"]
+
+    hact = (fix(length * SG13_IGRID + epsilon) * SG13_GRID) * 0.5
+    wact = (fix(width * SG13_IGRID + epsilon) * SG13_GRID) * 0.5
+
+    Cnt_a = tech["Cnt_a"]
+    Cnt_b = tech["Cnt_b"]
+    Cnt_b1 = tech["Cnt_b1"]
+    M1_c1 = tech["M1_c1"]
+    pSD_c = tech["pSD_c"]
+
+    w1m1 = wact - 0.02
+    h1m1 = hact - 0.02
+    wpsd = wact + 0.21
+    hpsd = hact + 0.18
+    w2act = wpsd + pSD_c
+    h2act = hpsd + pSD_c
+    dw2act = max(wact, 0.3)
+    dh2act = 0.29
+    w2m1 = w2act + 0.02
+    h2m1 = h2act + 0.02
+    dw2m1 = dw2act - 0.04
+    dh2m1 = dh2act - 0.04
+    wbulay = w2act + dw2act + 0.05
+    hbulay = h2act + dh2act + 0.05
+    wnwell = wbulay + 0.26
+    hnwell = hbulay + 0.26
+    w2psd = wnwell + 0.5
+    h2psd = hnwell + 0.5
+    d2psd = 0.75
+    w3act = w2psd + 0.2
+    h3act = h2psd + 0.2
+    d3act = 0.35
+
+    activLayer: LayerSpec = "Activdrawing"  # 1
+    contLayer: LayerSpec = "Contdrawing"  # 6
+    metal1Layer: LayerSpec = "Metal1drawing"  # 8
+    metal1_pin_Layer: LayerSpec = "Metal1pin"  # 8
+    pSdLayer: LayerSpec = "pSDdrawing"  # 14
+    nwellLayer: LayerSpec = "NWelldrawing"  # 31
+    nBuLayer: LayerSpec = "nBuLaydrawing"  # 32
+    textLayer: LayerSpec = "TEXTdrawing"  # 63
+
+    c.add_ref(
+        gf.components.rectangle(size=(2 * wact, 2 * hact), layer=activLayer)
+    ).move((-wact, -hact))
+
+    # Labels
+    c.add_label(
+        text="PLUS",
+        layer=textLayer,
+    )
+
+    c.add_label(
+        text="MINUS",
+        layer=textLayer,
+        position=(-w2m1 - dw2m1 / 2, 0),
+    )
+
+    c.add_label(text="pnpMPA", layer=textLayer, position=(0, -(hnwell + h2psd) / 2))
+
+    c.add_ref(gf.components.rectangle(size=(2 * wpsd, 2 * hpsd), layer=pSdLayer)).move(
+        (-wpsd, -hpsd)
+    )
+
+    _xl = -w1m1
+    _xh = w1m1
+    _yl = -h1m1
+    _yh = h1m1
+    _ox = M1_c1
+    _oy = M1_c1
+    _ws = Cnt_a
+    _ds = Cnt_b
+    vg4 = (Cnt_a + Cnt_b) * 4 + Cnt_a + _ox * 2
+    if _xh - _xl >= vg4 and _yh - _yl >= vg4:
+        _ds = Cnt_b1
+
+    contactArray(
+        c,
+        length=_xh - _xl,
+        width=_yh - _yl,
+        contactLayer=contLayer,
+        xl=_xl,
+        yl=_yl,
+        ox=_ox,
+        oy=_oy,
+        ws=_ws,
+        ds=_ds,
+    )
+
+    ref1 = c << gf.components.rectangle(size=(2 * w2act, 2 * h2act), layer=activLayer)
+    ref1.move((-w2act, -h2act))
+
+    ref2 = c << gf.components.rectangle(
+        size=(2 * w2act + 2 * dw2act, 2 * h2act + 2 * dh2act), layer=activLayer
+    )
+    ref2.move((-w2act - dw2act, -h2act - dh2act))
+
+    c.add_ref(
+        gf.boolean(
+            ref2,
+            ref1,
+            operation="xor",
+            layer=activLayer,
+            layer1=activLayer,
+            layer2=activLayer,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    ref1.delete()
+    # Delete the inner rectangle used for boolean
+    ref2.delete()
+
+    # Metals
+    ref1 = c << gf.components.rectangle(size=(2 * w2m1, 2 * h2m1), layer=metal1Layer)
+    ref1.move((-w2m1, -h2m1))
+
+    ref2 = c << gf.components.rectangle(
+        size=(2 * w2m1 + 2 * dw2m1, 2 * h2m1 + 2 * dh2m1), layer=metal1Layer
+    )
+    ref2.move((-w2m1 - dw2m1, -h2m1 - dh2m1))
+
+    c.add_ref(
+        gf.boolean(
+            ref2,
+            ref1,
+            operation="xor",
+            layer=metal1Layer,
+            layer1=metal1Layer,
+            layer2=metal1Layer,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    ref1.delete()
+    # Delete the inner rectangle used for boolean
+    ref2.delete()
+
+    _xl = -w2m1 - dw2m1
+    _xh = -w2m1
+    _yl = -h2m1
+    _yh = h2m1
+    if _xh - _xl >= vg4 and _yh - _yl >= vg4:
+        _ds = Cnt_b1
+
+    contactArray(
+        c,
+        length=_xh - _xl,
+        width=_yh - _yl,
+        contactLayer=contLayer,
+        xl=_xl,
+        yl=_yl,
+        ox=_ox,
+        oy=_oy,
+        ws=_ws,
+        ds=_ds,
+    )
+    _xl = w2m1
+    _xh = w2m1 + dw2m1
+    contactArray(
+        c,
+        length=_xh - _xl,
+        width=_yh - _yl,
+        contactLayer=contLayer,
+        xl=_xl,
+        yl=_yl,
+        ox=_ox,
+        oy=_oy,
+        ws=_ws,
+        ds=_ds,
+    )
+
+    c.add_ref(
+        gf.components.rectangle(size=(2 * wbulay, 2 * hbulay), layer=nBuLayer)
+    ).move((-wbulay, -hbulay))
+
+    c.add_ref(
+        gf.components.rectangle(size=(2 * wnwell, 2 * hnwell), layer=nwellLayer)
+    ).move((-wnwell, -hnwell))
+
+    # Ring
+    ref1 = c << gf.components.rectangle(size=(2 * w2psd, 2 * h2psd), layer=pSdLayer)
+    ref1.move((-w2psd, -h2psd))
+
+    ref2 = c << gf.components.rectangle(
+        size=(2 * w2psd + 2 * d2psd, 2 * h2psd + 2 * d2psd), layer=pSdLayer
+    )
+    ref2.move((-w2psd - d2psd, -h2psd - d2psd))
+
+    c.add_ref(
+        gf.boolean(
+            ref2,
+            ref1,
+            operation="xor",
+            layer=pSdLayer,
+            layer1=pSdLayer,
+            layer2=pSdLayer,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    ref1.delete()
+    # Delete the inner rectangle used for boolean
+    ref2.delete()
+
+    ref1 = c << gf.components.rectangle(size=(2 * w3act, 2 * h3act), layer=activLayer)
+    ref1.move((-w3act, -h3act))
+
+    ref2 = c << gf.components.rectangle(
+        size=(2 * w3act + 2 * d3act, 2 * h3act + 2 * d3act), layer=activLayer
+    )
+    ref2.move((-w3act - d3act, -h3act - d3act))
+
+    c.add_ref(
+        gf.boolean(
+            ref2,
+            ref1,
+            operation="xor",
+            layer=activLayer,
+            layer1=activLayer,
+            layer2=activLayer,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    ref1.delete()
+    # Delete the inner rectangle used for boolean
+    ref2.delete()
+
+    ref1 = c << gf.components.rectangle(size=(2 * w3act, 2 * h3act), layer=metal1Layer)
+    ref1.move((-w3act, -h3act))
+
+    ref2 = c << gf.components.rectangle(
+        size=(2 * w3act + 2 * d3act, 2 * h3act + 2 * d3act), layer=metal1Layer
+    )
+    ref2.move((-w3act - d3act, -h3act - d3act))
+
+    c.add_ref(
+        gf.boolean(
+            ref2,
+            ref1,
+            operation="xor",
+            layer=metal1Layer,
+            layer1=metal1Layer,
+            layer2=metal1Layer,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    ref1.delete()
+    # Delete the inner rectangle used for boolean
+    ref2.delete()
+
+    # Ring Metal
+    MetT = True  # include pins on top
+    MetB = True  # include pins on bottom
+    MetL = True  # include pins left
+    MetR = True  # include pins right
+    _ds = Cnt_b
+    _ox = 0.095
+    idtie = 0
+
+    if MetT:
+        _xl = -w3act - d3act
+        _xh = w3act + d3act
+        _yl = h3act
+        _yh = h3act + d3act
+        contactArray(
+            c,
+            length=_xh - _xl,
+            width=_yh - _yl,
+            contactLayer=contLayer,
+            xl=_xl,
+            yl=_yl,
+            ox=_ox,
+            oy=_oy,
+            ws=_ws,
+            ds=_ds,
+        )
+        if idtie == 0:
+            # Assigning reference to idtie, so that it is not used again in the next if statements.
+            idtie = c << gf.components.rectangle(
+                size=(2 * (w3act + d3act), d3act), layer=metal1_pin_Layer
+            )
+            idtie.move((-w3act - d3act, h3act))
+
+            # Coordinates to be used for port
+            idtie_xmin = -w3act - d3act
+            idtie_xmax = idtie_xmin + 2 * (w3act + d3act)
+            idtie_ymin = h3act
+            idtie_ymax = idtie_ymin + d3act
+
+            c.add_label(text="TIE", layer=textLayer, position=(0, h3act + d3act / 2))
+
+    if MetB:
+        _xl = -w3act - d3act
+        _xh = w3act + d3act
+        _yl = -h3act - d3act
+        _yh = -h3act
+        contactArray(
+            c,
+            length=_xh - _xl,
+            width=_yh - _yl,
+            contactLayer=contLayer,
+            xl=_xl,
+            yl=_yl,
+            ox=_ox,
+            oy=_oy,
+            ws=_ws,
+            ds=_ds,
+        )
+        if idtie == 0:
+            idtie = c << gf.components.rectangle(
+                size=(2 * (w3act + d3act), d3act), layer=metal1_pin_Layer
+            )
+            idtie.move((-w3act - d3act, -h3act - d3act))
+
+            # Coordinates to be used for port
+            idtie_xmin = -w3act - d3act
+            idtie_xmax = idtie_xmin + 2 * (w3act + d3act)
+            idtie_ymin = -h3act - d3act
+            idtie_ymax = idtie_ymin + d3act
+
+            c.add_label(text="TIE", layer=textLayer, position=(0, -h3act - d3act / 2))
+
+    _oy = 0.085
+    if MetL:
+        _xl = -w3act - d3act
+        _xh = -w3act
+        _yl = -h3act
+        _yh = h3act
+        contactArray(
+            c,
+            length=_xh - _xl,
+            width=_yh - _yl,
+            contactLayer=contLayer,
+            xl=_xl,
+            yl=_yl,
+            ox=_ox,
+            oy=_oy,
+            ws=_ws,
+            ds=_ds,
+        )
+        if idtie == 0:
+            idtie = c << gf.components.rectangle(
+                size=(d3act, 2 * h3act), layer=metal1_pin_Layer
+            )
+            idtie.move((-w3act - d3act, -h3act))
+
+            # Coordinates to be used for port
+            idtie_xmin = -w3act - d3act
+            idtie_xmax = idtie_xmin + d3act
+            idtie_ymin = -h3act
+            idtie_ymax = idtie_ymin + 2 * h3act
+
+            c.add_label(text="TIE", layer=textLayer, position=(-w3act - d3act / 2, 0))
+
+    if MetR:
+        _xl = w3act
+        _xh = w3act + d3act
+        _yl = -h3act
+        _yh = h3act
+        contactArray(
+            c,
+            length=_xh - _xl,
+            width=_yh - _yl,
+            contactLayer=contLayer,
+            xl=_xl,
+            yl=_yl,
+            ox=_ox,
+            oy=_oy,
+            ws=_ws,
+            ds=_ds,
+        )
+        if idtie == 0:
+            idtie = c << gf.components.rectangle(
+                size=(d3act, 2 * h3act), layer=metal1_pin_Layer
+            )
+            idtie.move((w3act, -h3act))
+
+            # Coordinates to be used for port
+            idtie_xmin = w3act
+            idtie_xmax = idtie_xmin + d3act
+            idtie_ymin = -h3act
+            idtie_ymax = idtie_ymin + 2 * h3act
+
+            c.add_label(text="TIE", layer=textLayer, position=(w3act + d3act / 2, 0))
+
+    c.add_ref(
+        gf.components.rectangle(size=(2 * w1m1, 2 * h1m1), layer=metal1_pin_Layer)
+    ).move((-w1m1, -h1m1))
+
+    c.add_ref(
+        gf.components.rectangle(size=(2 * w1m1, 2 * h1m1), layer=metal1Layer)
+    ).move((-w1m1, -h1m1))
+
+    c.add_ref(
+        gf.components.rectangle(size=(dw2m1, 2 * h2m1), layer=metal1_pin_Layer)
+    ).move((-w2m1 - dw2m1, -h2m1))
+
+    if idtie != 0:
+        c.add_port(
+            "TIE",
+            center=(0.5 * (idtie_xmin + idtie_xmax), 0.5 * (idtie_ymin + idtie_ymax)),
+            width=_snap_width_to_grid(idtie_ymax - idtie_ymin),
+            layer=metal1_pin_Layer,
+            orientation=180.0,
+            port_type="electrical",
+        )
+
+    c.add_port(
+        "PLUS",
+        center=(0, 0),
+        width=_snap_width_to_grid(2 * w1m1),
+        layer=metal1_pin_Layer,
+        orientation=270.0,
+        port_type="electrical",
+    )
+
+    c.add_port(
+        "MINUS",
+        center=(-w2m1 - dw2m1 / 2, 0),
+        width=_snap_width_to_grid(dw2m1),
+        layer=metal1_pin_Layer,
+        orientation=270.0,
+        port_type="electrical",
+    )
+
+    return c
+
+
 if __name__ == "__main__":
     from gdsfactory.difftest import xor
 
@@ -1855,7 +2390,12 @@ if __name__ == "__main__":
     # c = xor(c0, c1)
     # c.show()
 
-    c0 = cells2.npn13G2V(Nx=3)
-    c1 = npn13G2V(Nx=3)
+    # c0 = cells2.npn13G2V(Nx=3)
+    # c1 = npn13G2V(Nx=3)
+    # c = xor(c0, c1)
+    # c.show()
+
+    c0 = cells2.pnpMPA()
+    c1 = pnpMPA()
     c = xor(c0, c1)
     c.show()
