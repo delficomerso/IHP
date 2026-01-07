@@ -16,6 +16,8 @@ def all_cells() -> gf.Component:
     cells = []
 
     for cell_name, cell in PDK.cells.items():
+        if cell_name in skip:
+            continue
         try:
             cell_instance = cell()
             cells.append(cell_instance)
