@@ -1012,6 +1012,7 @@
         "TopMetal2.pin": "134, 2",
         "TopMetal2.net": "134, 3",
         "TopMetal2.boundary": "134, 4",
+        "EmWiHV.drawing": "156, 0",
         "Passiv": "9, 0",
         "Passiv.drawing": "9, 0",
         "Passiv.label": "9, 1",

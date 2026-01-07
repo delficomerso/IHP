@@ -1215,7 +1215,578 @@ def npn13G2L(
     )
 
     c.add_label(
+        text="C",
+        layer=layer_text,
+        position=(
+            0.5 * (collector_pin_xmin + collector_pin_xmax),
+            0.5 * (collector_pin_ymin + collector_pin_ymax),
+        ),
+    )
+
+    # Base port
+    c.add_port(
+        "B",
+        center=(
+            0.5 * (base_pin_xmin + base_pin_xmax),
+            0.5 * (base_pin_ymin + base_pin_ymax),
+        ),
+        width=_snap_width_to_grid(base_pin_ymax - base_pin_ymin),
+        layer=layer_metal1_pin,
+        orientation=180.0,
+        port_type="electrical",
+    )
+    c.add_label(
         text="B",
+        layer=layer_text,
+        position=(
+            0.5 * (base_pin_xmin + base_pin_xmax),
+            0.5 * (base_pin_ymin + base_pin_ymax),
+        ),
+    )
+
+    # Emitter port
+    c.add_port(
+        "E",
+        center=(
+            0.5 * (emitter_pin_xmin + emitter_pin_xmax),
+            0.5 * (emitter_pin_ymin + emitter_pin_ymax),
+        ),
+        width=_snap_width_to_grid(emitter_pin_ymax - emitter_pin_ymin),
+        layer=layer_metal2_pin,
+        orientation=180.0,
+        port_type="electrical",
+    )
+    c.add_label(
+        text="E",
+        layer=layer_text,
+        position=(
+            0.5 * (emitter_pin_xmin + emitter_pin_xmax),
+            0.5 * (emitter_pin_ymin + emitter_pin_ymax),
+        ),
+    )
+
+    return c
+
+
+@gf.cell
+def npn13G2V(
+    emitter_length: float = 1,
+    emitter_width: float = 0.12,
+    Nx: int = 1,
+) -> gf.Component:
+    """Builds the IHP npn13G2V BJT transistor as a gdsfactory Component.
+
+    The transistor geometry is defined by the number of emitter fingers and the dimensions
+    of each emitter finger.
+
+    Args:
+        emitter_length: Length of each emitter finger, in microns.
+        emitter_width: Width of each emitter finger, in microns.
+        Nx: Number of emitter fingers.
+
+    Returns:
+        gdsfactory.Component: The generated npn13G2L transistor layout.
+    """
+    c = gf.Component()
+
+    layer_EmWiHV: LayerSpec = "EmWiHVdrawing"
+    layer_HeatTrans: LayerSpec = "HeatTransdrawing"
+    layer_activ: LayerSpec = "Activdrawing"
+    layer_activ_mask: LayerSpec = "Activmask"
+    layer_via1: LayerSpec = "Via1drawing"
+    layer_cont: LayerSpec = "Contdrawing"
+    layer_metal1: LayerSpec = "Metal1drawing"
+    layer_metal1_pin: LayerSpec = "Metal1pin"
+    layer_metal2: LayerSpec = "Metal2drawing"
+    layer_metal2_pin: LayerSpec = "Metal2pin"
+    layer_trans: LayerSpec = "TRANSdrawing"
+    layer_text: LayerSpec = "TEXTdrawing"
+    layer_pSD: LayerSpec = "pSDdrawing"
+
+    le = emitter_length
+    we = emitter_width
+    # masterLib = "SG13_dev"
+
+    emWindOrigin_x = 3.81
+    emWindOrigin_y = 3.1
+    Activ_enc_vert = 0.28
+    Activ_enc_hori = 1.11
+    Col_Metal1_distance = 0.79
+    Col_Metal1_width = 0.32
+    Bas_Metal1_distance = 0.295
+    Bas_Metal1_width = 0.17
+    Emi_Metal1_enc_vert = 0.28
+    Emi_Metal1_enc_hori = 0.07
+
+    Via1Width = tech["V1_a"]
+    Via1Space = tech["V1_b"]
+    m1EncVia1 = tech["V1_c"]
+
+    column_pitch = 2.34
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(we, le),
+            layer=layer_EmWiHV,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x, emWindOrigin_y))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                we + 0.1,
+                le + 0.1,
+            ),
+            layer=layer_HeatTrans,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - 0.05, emWindOrigin_y - 0.05))
+
+    c.add_label(
+        text="npn13G2V",
+        layer=layer_HeatTrans,
+        position=(
+            0.5 * (2 * emWindOrigin_x + we),
+            0.5 * (2 * emWindOrigin_y + le),
+        ),
+    )
+
+    # Activ Drawing
+    outer = c << gf.components.rectangle(
+        size=(
+            we + 2 * Activ_enc_hori,
+            le + 2 * Activ_enc_vert,
+        ),
+        layer=layer_activ,
+    )
+    outer.move((emWindOrigin_x - Activ_enc_hori, emWindOrigin_y - Activ_enc_vert))
+
+    # Activ mask
+    inner = c << gf.components.rectangle(
+        size=(
+            0.705 - Emi_Metal1_enc_hori,
+            le + 2 * Activ_enc_vert,
+        ),
+        layer=layer_activ_mask,
+    )
+    inner.move((emWindOrigin_x - 0.705, emWindOrigin_y - Activ_enc_vert))
+
+    inner1 = c << gf.components.rectangle(
+        size=(
+            0.705 - Emi_Metal1_enc_hori,
+            le + 2 * Activ_enc_vert,
+        ),
+        layer=layer_activ_mask,
+    )
+    inner1.move(
+        (emWindOrigin_x + we + Emi_Metal1_enc_hori, emWindOrigin_y - Activ_enc_vert)
+    )
+
+    # Combine mask's rectangles in order to remove them from activ
+    inners = gf.boolean(inner, inner1, operation="xor", layer=layer_activ_mask)
+
+    c.add_ref(inners, columns=Nx, column_pitch=column_pitch)
+
+    c.add_ref(
+        gf.boolean(
+            outer,
+            inners,
+            operation="not",
+            layer=layer_activ,
+            layer1=layer_activ,
+            layer2=layer_activ_mask,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    )
+    # Delete the rectangle that was covering the whole region
+    outer.delete()
+
+    # Draw Via
+    via_cnt = int((le + 0.46) / (0.19 + 0.22))
+
+    emMet1_height = le + 2 * Emi_Metal1_enc_vert
+
+    viaColumn = (
+        via_cnt * Via1Width
+        + (via_cnt - 1) * Via1Space
+        + (Via1Width + Via1Space)
+        + 0.05
+        + m1EncVia1
+    )
+
+    if emMet1_height < viaColumn:
+        via_cnt -= 1
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                0.19,
+                0.19,
+            ),
+            layer=layer_via1,
+        ),
+        rows=via_cnt + 1,
+        row_pitch=0.41,
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((3.775, 2.87))
+
+    # Draw contacts
+    cont_cnt = int(fix((le + 0.21) / (0.16 + 0.18)))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                0.16,
+                0.12 + le,
+            ),
+            layer=layer_cont,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((3.79, 3.04))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                0.16,
+                0.16,
+            ),
+            layer=layer_cont,
+        ),
+        rows=cont_cnt + 1,
+        row_pitch=0.34,
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((2.8, 2.89))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                0.16,
+                0.16,
+            ),
+            layer=layer_cont,
+        ),
+        rows=cont_cnt + 1,
+        row_pitch=0.34,
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((3.35, 2.89))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                0.16,
+                0.16,
+            ),
+            layer=layer_cont,
+        ),
+        rows=cont_cnt + 1,
+        row_pitch=0.34,
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((4.23, 2.89))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                0.16,
+                0.16,
+            ),
+            layer=layer_cont,
+        ),
+        rows=cont_cnt + 1,
+        row_pitch=0.34,
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((4.78, 2.89))
+
+    # Metals
+    # Metal Path upwards
+    # Collector
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                Col_Metal1_width,
+                4.1 - 2.82 + le,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width, 2.82))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                Col_Metal1_width,
+                4.1 - 2.82 + le,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x + we + Col_Metal1_distance, 2.82))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                2 * Col_Metal1_distance + we + 2 * Col_Metal1_width,
+                0.65,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width, 4.1 + le))
+
+    collector_pin_xmin = emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width
+    collector_pin_xmax = (
+        collector_pin_xmin + 2 * Col_Metal1_distance + we + 2 * Col_Metal1_width
+    )
+    # The maximum x depends on the number of elements
+    collector_pin_xmax += (Nx - 1) * (collector_pin_xmax - collector_pin_xmin)
+    collector_pin_ymin = 4.1 + le
+    collector_pin_ymax = collector_pin_ymin + 0.65
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                2 * Col_Metal1_distance + we + 2 * Col_Metal1_width,
+                0.65,
+            ),
+            layer=layer_metal1_pin,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width, 4.1 + le))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                Bas_Metal1_width,
+                1.28 + le,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Bas_Metal1_distance - Bas_Metal1_width, 2.1))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                Bas_Metal1_width,
+                1.28 + le,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x + we + Bas_Metal1_distance, 2.1))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                2 * Bas_Metal1_distance + we + 2 * Bas_Metal1_width,
+                0.65,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Bas_Metal1_distance - Bas_Metal1_width, 1.45))
+
+    base_pin_xmin = emWindOrigin_x - Bas_Metal1_distance - Bas_Metal1_width
+    base_pin_xmax = base_pin_xmin + 2 * Bas_Metal1_distance + we + 2 * Bas_Metal1_width
+    # The maximum x depends on the number of elements
+    base_pin_xmax += (Nx - 1) * column_pitch
+    base_pin_ymin = 1.45
+    base_pin_ymax = base_pin_ymin + 0.65
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                2 * Bas_Metal1_distance + we + 2 * Bas_Metal1_width,
+                0.65,
+            ),
+            layer=layer_metal1_pin,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Bas_Metal1_distance - Bas_Metal1_width, 1.45))
+
+    # Emitter
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                we + 2 * Emi_Metal1_enc_hori,
+                le + 2 * Emi_Metal1_enc_vert,
+            ),
+            layer=layer_metal1,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Emi_Metal1_enc_hori, emWindOrigin_y - Emi_Metal1_enc_vert))
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                we + 2 * Col_Metal1_distance + 2 * Col_Metal1_width,
+                le + 0.56,
+            ),
+            layer=layer_metal2,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width, 2.82))
+
+    emitter_pin_xmin = emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width
+    emitter_pin_xmax = (
+        emitter_pin_xmin + 2 * Col_Metal1_distance + we + 2 * Col_Metal1_width
+    )
+    # The maximum x depends on the number of elements
+    emitter_pin_xmax += (Nx - 1) * (emitter_pin_xmax - emitter_pin_xmin)
+    emitter_pin_ymin = 2.9
+    emitter_pin_ymax = emitter_pin_ymin + le + 0.4
+
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                we + 2 * Col_Metal1_distance + 2 * Col_Metal1_width,
+                le + 0.56,
+            ),
+            layer=layer_metal2_pin,
+        ),
+        columns=Nx,
+        column_pitch=column_pitch,
+    ).move((emWindOrigin_x - Col_Metal1_distance - Col_Metal1_width, 2.82))
+
+    # Draw Guard Ring
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                5.94 + ((Nx - 1) * 2.34),
+                le + 4.4,
+            ),
+            layer=layer_trans,
+        )
+    ).move((0.9, 0.9))
+
+    outer = c << gf.components.rectangle(
+        size=(
+            7.74 + ((Nx - 1) * 2.34),
+            le + 6.2,
+        ),
+        layer=layer_pSD,
+    )
+
+    inner = c << gf.components.rectangle(
+        size=(
+            5.94 + ((Nx - 1) * 2.34),
+            le + 4.4,
+        ),
+        layer=layer_pSD,
+    )
+    inner.move((0.9, 0.9))
+
+    c.add_ref(
+        gf.boolean(
+            outer,
+            inner,
+            operation="not",
+            layer=layer_pSD,
+            layer1=layer_pSD,
+            layer2=layer_pSD,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    outer.delete()
+    # Delete the inner rectangle used for boolean
+    inner.delete()
+
+    outer = c << gf.components.rectangle(
+        size=(
+            7.34 + ((Nx - 1) * 2.34),
+            le + 5.8,
+        ),
+        layer=layer_activ,
+    )
+    outer.move((0.2, 0.2))
+    inner = c << gf.components.rectangle(
+        size=(
+            6.34 + ((Nx - 1) * 2.34),
+            le + 4.8,
+        ),
+        layer=layer_activ,
+    )
+    inner.move((0.7, 0.7))
+    c.add_ref(
+        gf.boolean(
+            outer,
+            inner,
+            operation="not",
+            layer=layer_activ,
+            layer1=layer_activ,
+            layer2=layer_activ,
+        )
+    )
+    # Delete the rectangle that was covering the whole region
+    outer.delete()
+    # Delete the inner rectangle used for boolean
+    inner.delete()
+
+    # Texts
+    pcLabelText = f"Ae={int(Nx):d}*{1:d}*{le:.2f}*{we:.2f}"
+    c.add_label(text=pcLabelText, layer=layer_text, position=(1.5, 1.0))
+
+    c.add_label(text="npn13G2L", layer=layer_text, position=(1.75, 1.0))
+
+    if Nx > 1:
+        c.add_ref(
+            gf.components.rectangle(
+                size=(
+                    1.3,
+                    0.65,
+                ),
+                layer=layer_metal1,
+            ),
+            columns=Nx - 1,
+            column_pitch=column_pitch,
+        ).move((4.395, 1.45))
+        c.add_ref(
+            gf.components.rectangle(
+                size=(
+                    1.3,
+                    0.65,
+                ),
+                layer=layer_metal1_pin,
+            ),
+            columns=Nx - 1,
+            column_pitch=column_pitch,
+        ).move((4.395, 1.45))
+
+    # Ports
+    # Collector port
+    c.add_port(
+        "C",
+        center=(
+            0.5 * (collector_pin_xmin + collector_pin_xmax),
+            0.5 * (collector_pin_ymin + collector_pin_ymax),
+        ),
+        width=_snap_width_to_grid(collector_pin_ymax - collector_pin_ymin),
+        layer=layer_metal1_pin,
+        orientation=180.0,
+        port_type="electrical",
+    )
+
+    c.add_label(
+        text="C",
         layer=layer_text,
         position=(
             0.5 * (collector_pin_xmin + collector_pin_xmax),
@@ -1279,7 +1850,12 @@ if __name__ == "__main__":
     # c = xor(c0, c1)
     # c.show()
 
-    c0 = cells2.npn13G2L(Nx=2)
-    c1 = npn13G2L(Nx=2)
+    # c0 = cells2.npn13G2L(Nx=2)
+    # c1 = npn13G2L(Nx=2)
+    # c = xor(c0, c1)
+    # c.show()
+
+    c0 = cells2.npn13G2V(Nx=3)
+    c1 = npn13G2V(Nx=3)
     c = xor(c0, c1)
     c.show()
