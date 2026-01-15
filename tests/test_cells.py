@@ -13,6 +13,7 @@ from pytest_regressions.data_regression import DataRegressionFixture
 from pytest_regressions.ndarrays_regression import NDArraysRegressionFixture
 
 from ihp import PDK
+from ihp.models.to_vlsir import to_proto, to_spice
 
 
 @pytest.fixture(autouse=True)
@@ -138,6 +139,44 @@ def test_models_with_wavelength_sweep(
         arrays_to_check,
         default_tolerance={"atol": 1e-2, "rtol": 1e-2},
     )
+
+
+@pytest.mark.parametrize("component_name", cell_names)
+def test_vlsir_to_proto(component_name: str) -> None:
+    """Test to_proto for cells with vlsir metadata."""
+    component = cells[component_name]()
+
+    if "vlsir" not in component.info:
+        pytest.skip(f"{component_name} does not have vlsir metadata")
+
+    pkg = to_proto(component, domain="ihp.sg13g2")
+
+    # Verify we got a valid package with one external module
+    assert len(pkg.ext_modules) == 1
+    ext_mod = pkg.ext_modules[0]
+
+    # Verify the external module has the expected model name
+    vlsir_info = component.info["vlsir"]
+    assert ext_mod.name.name == vlsir_info["model"]
+
+    # Verify ports match port_order
+    port_names = [p.signal for p in ext_mod.ports]
+    assert port_names == vlsir_info["port_order"]
+
+
+@pytest.mark.parametrize("component_name", cell_names)
+def test_vlsir_to_spice(component_name: str) -> None:
+    """Test to_spice for cells with vlsir metadata."""
+    component = cells[component_name]()
+
+    if "vlsir" not in component.info:
+        pytest.skip(f"{component_name} does not have vlsir metadata")
+
+    netlist = to_spice(component, domain="ihp.sg13g2", fmt="spice")
+
+    # Verify we got a non-empty netlist string
+    assert isinstance(netlist, str)
+    assert len(netlist) > 0
 
 
 if __name__ == "__main__":
