@@ -1,0 +1,18 @@
+info:
+  model: tline
+  vlsir:
+    model: tline
+    params:
+      td: 0.0
+      z0: 50
+    port_order:
+    - p1
+    - n1
+    - p2
+    - n2
+    spice_lib: null
+    spice_type: TLINE
+name: tline_Z50_T1em09
+settings:
+  td: 0.0
+  z0: 50

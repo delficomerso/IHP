@@ -1,0 +1,18 @@
+info:
+  model: diode
+  vlsir:
+    model: diol
+    params:
+      area: 0.0
+      pj: 0.0
+    port_map: {}
+    port_order:
+    - p
+    - n
+    spice_lib: null
+    spice_type: DIODE
+name: diode_Mdiol_A1em12_P1em06
+settings:
+  area: 0.0
+  model: diol
+  pj: 0.0

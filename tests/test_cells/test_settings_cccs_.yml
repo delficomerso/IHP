@@ -1,0 +1,17 @@
+info:
+  model: cccs
+  vlsir:
+    model: cccs
+    params:
+      gain: 1
+    port_map: {}
+    port_order:
+    - p_out
+    - n_out
+    - p_ctrl
+    - n_ctrl
+    spice_lib: null
+    spice_type: CCCS
+name: cccs_G1
+settings:
+  gain: 1

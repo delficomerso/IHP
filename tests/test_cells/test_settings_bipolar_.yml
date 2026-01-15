@@ -1,0 +1,18 @@
+info:
+  model: bipolar
+  vlsir:
+    model: npn
+    params:
+      area: 1
+    port_map: {}
+    port_order:
+    - C
+    - B
+    - E
+    - S
+    spice_lib: null
+    spice_type: BIPOLAR
+name: bipolar_Mnpn_SLNone_A1
+settings:
+  area: 1
+  model: npn

@@ -7,6 +7,7 @@ from .containers import *
 from .fixed import *
 from .inductors import *
 from .passives import *
+from .primitives import *
 from .resistors import *
 from .text import *
 from .transistors import *

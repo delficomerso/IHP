@@ -1,0 +1,16 @@
+info:
+  model: ccvs
+  vlsir:
+    model: ccvs
+    params:
+      rm: 1000
+    port_order:
+    - p_out
+    - n_out
+    - p_ctrl
+    - n_ctrl
+    spice_lib: null
+    spice_type: CCVS
+name: ccvs_R1000
+settings:
+  rm: 1000

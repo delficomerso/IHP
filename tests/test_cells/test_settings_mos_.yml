@@ -1,0 +1,22 @@
+info:
+  model: mos
+  vlsir:
+    model: nmos
+    params:
+      l: 0.0
+      nf: 1
+      w: 0.0
+    port_map: {}
+    port_order:
+    - D
+    - G
+    - S
+    - B
+    spice_lib: null
+    spice_type: MOS
+name: mos_W1em06_L1em07_N1_Mnmos_SLNone
+settings:
+  l: 0.0
+  model: nmos
+  nf: 1
+  w: 0.0

@@ -1,0 +1,16 @@
+info:
+  model: inductor
+  vlsir:
+    model: lind
+    params:
+      l: 0.0
+    port_map: {}
+    port_order:
+    - p
+    - n
+    spice_lib: null
+    spice_type: INDUCTOR
+name: inductor_I1em09_Mlind
+settings:
+  inductance: 0.0
+  model: lind

@@ -1,0 +1,17 @@
+info:
+  model: vcvs
+  vlsir:
+    model: vcvs
+    params:
+      gain: 1
+    port_map: {}
+    port_order:
+    - p_out
+    - n_out
+    - p_ctrl
+    - n_ctrl
+    spice_lib: null
+    spice_type: VCVS
+name: vcvs_G1
+settings:
+  gain: 1

@@ -1,0 +1,17 @@
+info:
+  model: vccs
+  vlsir:
+    model: vccs
+    params:
+      gm: 0.001
+    port_map: {}
+    port_order:
+    - p_out
+    - n_out
+    - p_ctrl
+    - n_ctrl
+    spice_lib: null
+    spice_type: VCCS
+name: vccs_G0p001
+settings:
+  gm: 0.001

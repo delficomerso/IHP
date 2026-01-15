@@ -163,7 +163,7 @@ def to_proto(component: Component, domain: str = "") -> vckt.Package:
         domain: Package domain name (e.g., "myproject")
 
     Returns:
-        VLSIR Package containing the ExternalModule
+        VLSIR Package containing a top-level module with the device instance
 
     Raises:
         ValueError: If component lacks valid vlsir metadata
@@ -173,24 +173,72 @@ def to_proto(component: Component, domain: str = "") -> vckt.Package:
     # Create package
     pkg = vckt.Package(domain=domain)
 
-    # Build qualified name
+    # Build qualified name for the device model
+    model_name = vlsir_info["model"]
     qname = vlsir.utils.QualifiedName(
-        name=vlsir_info["model"],
+        name=model_name,
         domain=domain,
     )
 
-    # Create ExternalModule
+    # Create ExternalModule for the device
     spice_type = _spice_type_to_proto(vlsir_info["spice_type"])
     ext_mod = vckt.ExternalModule(name=qname, spicetype=spice_type)
 
     # Add ports from port_order
-    for port_name in vlsir_info["port_order"]:
+    port_order = vlsir_info["port_order"]
+    for port_name in port_order:
         ext_mod.signals.append(vckt.Signal(name=port_name, width=1))
         port = vckt.Port(signal=port_name)
         port.direction = vckt.Port.Direction.INOUT
         ext_mod.ports.append(port)
 
     pkg.ext_modules.append(ext_mod)
+
+    # Create a top-level module that instantiates the device
+    top_module = vckt.Module()
+    top_module.name = component.name or "top"
+
+    # Add signals to the top module (these become the external ports)
+    for port_name in port_order:
+        top_module.signals.append(vckt.Signal(name=port_name, width=1))
+        port = vckt.Port(signal=port_name)
+        port.direction = vckt.Port.Direction.INOUT
+        top_module.ports.append(port)
+
+    # Create an instance of the device
+    inst = vckt.Instance(name="X1")
+    inst.module.external.CopyFrom(qname)
+
+    # Connect the instance ports to the top-level signals
+    for port_name in port_order:
+        conn = vckt.Connection(
+            portname=port_name,
+            target=vckt.ConnectionTarget(sig=port_name)
+        )
+        inst.connections.append(conn)
+
+    # Add parameters from the vlsir metadata
+    params = vlsir_info.get("params", {})
+    if isinstance(params, dict):
+        for key, val in params.items():
+            if val is not None:
+                # Convert parameter value to VLSIR ParamValue
+                param = vlsir.Param(name=key)
+                if isinstance(val, bool):
+                    param.value.literal = str(val).lower()
+                elif isinstance(val, int):
+                    param.value.int64_value = val
+                elif isinstance(val, float):
+                    param.value.double_value = val
+                elif isinstance(val, str):
+                    param.value.literal = val
+                else:
+                    param.value.literal = str(val)
+                inst.parameters.append(param)
+
+    top_module.instances.append(inst)
+    pkg.modules.append(top_module)
+
     return pkg
 
 

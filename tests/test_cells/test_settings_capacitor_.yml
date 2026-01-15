@@ -1,0 +1,16 @@
+info:
+  model: capacitor
+  vlsir:
+    model: cpoly
+    params:
+      c: 0.0
+    port_map: {}
+    port_order:
+    - p
+    - n
+    spice_lib: null
+    spice_type: CAPACITOR
+name: capacitor_C1em12_Mcpoly
+settings:
+  capacitance: 0.0
+  model: cpoly

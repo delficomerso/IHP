@@ -1,15 +1,16 @@
 info:
   vlsir:
-    l: 0.0
     model: nmoscl_2
-    ng: 10
+    params:
+      l: 0.0
+      ng: 10
+      w: 0.0
     port_map: {}
     port_order:
     - VDD
     - VSS
     spice_lib: sg13g2_moslv_mod.lib
     spice_type: SUBCKT
-    w: 0.0
 name: esd_nmos_W50_L0p5_N10_Mnmoscl_2_LPPWelldrawing_LAActivd_fa755f41
 settings:
   layer_activ: Activdrawing

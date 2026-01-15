@@ -4,15 +4,16 @@ info:
   rows: 1
   type: ntap
   vlsir:
-    l: 0.0
     model: ntap1
+    params:
+      l: 0.0
+      w: 0.0
     port_map: {}
     port_order:
     - '1'
     - '2'
     spice_lib: resistors_mod.lib
     spice_type: SUBCKT
-    w: 0.0
   width: 1
 name: ntap1_W1_L1_R1_C1_LNNWelldrawing_LAActivdrawing_LNnSDdr_50c693a9
 settings:

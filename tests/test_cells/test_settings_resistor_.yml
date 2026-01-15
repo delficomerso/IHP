@@ -1,0 +1,16 @@
+info:
+  model: resistor
+  vlsir:
+    model: rpoly
+    params:
+      r: 1000
+    port_map: {}
+    port_order:
+    - p
+    - n
+    spice_lib: null
+    spice_type: RESISTOR
+name: resistor_R1000_Mrpoly
+settings:
+  model: rpoly
+  resistance: 1000
