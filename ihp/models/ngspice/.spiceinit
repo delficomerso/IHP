@@ -1,8 +1,8 @@
-*  a custom spiceinit file for IHP-Open-PDK 
+*  a custom spiceinit file for IHP-Open-PDK
 
 * export PDK_ROOT and PDK environmental variables first and add it to your .bashrc
 * export PDK_ROOT= installation_specific_directory/IHP-Open-PDK
-* export PDK=ihp-sg13g2 
+* export PDK=ihp-sg13g2
 
 setcs sourcepath = (  $sourcepath $PDK_ROOT/$PDK/libs.tech/ngspice/models $PDK_ROOT/ihp-sg13g2/libs.ref/sg13g2_stdcell/spice )
 setcs sourcepath = (  $sourcepath $PDK_ROOT/$PDK/libs.tech/ngspice/models $PDK_ROOT/ihp-sg13g2/libs.ref/sg13g2_io/spice )
@@ -23,9 +23,8 @@ setcs sourcepath = (  $sourcepath $PDK_ROOT/$PDK/libs.tech/ngspice/models $PDK_R
 *set ngbehavior=hsa
 *set noinit
 
-* add OSDI 
+* add OSDI
 osdi  '$PDK_ROOT/$PDK/libs.tech/ngspice/osdi/psp103.osdi'
 osdi  '$PDK_ROOT/$PDK/libs.tech/ngspice/osdi/psp103_nqs.osdi'
 osdi  '$PDK_ROOT/$PDK/libs.tech/ngspice/osdi/r3_cmc.osdi'
 osdi  '$PDK_ROOT/$PDK/libs.tech/ngspice/osdi/mosvar.osdi'
-
