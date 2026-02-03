@@ -21,9 +21,11 @@ def cmom_extractor(
     length: float = 2.0,
     spacing: float = 0.26,
     min_width: float = 0.2,
-    mom_metals: list[LayerSpec] = [],
+    mom_metals: list[LayerSpec] | None = None,
     **kwargs,
 ) -> float:
+    if mom_metals is None:
+        mom_metals = []
     layer_thickness = {
         "Metal1": tech.LAYER_STACK["metal1"].thickness,
         "Metal2": tech.LAYER_STACK["metal2"].thickness,
@@ -286,7 +288,7 @@ def cmom(
         **kwargs,
     )
     c.add_label(
-        text=f"C = {c.info['capacitance']} fF",
+        text=f"C = {c.info.get('capacitance', 0)} fF",
         position=(c.x, c.y - min_width),
         layer=layer_text,
     )

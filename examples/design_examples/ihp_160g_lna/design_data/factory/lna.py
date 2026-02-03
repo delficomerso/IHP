@@ -85,35 +85,37 @@ def lna_160g_stage(
     """
     c = Component()
 
-    # Constants - Avoiding magic numbers
+    # ----------------------------------------------------------------
+    # 1. LOCAL CONSTANTS (Replacing Magic Numbers)
+    # ----------------------------------------------------------------
 
     # Spacing and Positioning
-    NPN_SPACING = 0.6
-    NPN_Y_OFFSET = 5.0
-    RSIL_Y_OFFSET = 1.7
-    VBB_PAD_SIZE = 5.0
-    VBB_X_OFFSET = 5.0
+    # NPN_SPACING = 0.6
+    # NPN_Y_OFFSET = 5.0
+    # RSIL_Y_OFFSET = 1.7
+    # VBB_PAD_SIZE = 5.0
+    # VBB_X_OFFSET = 5.0
 
     # Component Dimensions
-    RHIGH_DY = 6.0
-    RHIGH_DX = 1.9
-    RSIL_DX = 7.5
-    RSIL_DY = 5.0
-    GND_STUB_WIDTH = 15.0
-    GND_STUB_HEIGHT = 3.9
-    STUB_WIDTH = 3.0
-    OUT_STUB_WIDTH = 9.0
+    # RHIGH_DY = 6.0
+    # RHIGH_DX = 1.9
+    # RSIL_DX = 7.5
+    # RSIL_DY = 5.0
+    # GND_STUB_WIDTH = 15.0
+    # GND_STUB_HEIGHT = 3.9
+    # STUB_WIDTH = 3.0
+    # OUT_STUB_WIDTH = 9.0
 
     # Via Configuration
-    VIA2_VBB_COLS = 5
-    VIA_RHIGH_P2_COLS = 4
-    NPN_TERM_VIA_COLS = 3
-    NPN_COL_X_OFFSET = 0.645
+    # VIA2_VBB_COLS = 5
+    # VIA_RHIGH_P2_COLS = 4
+    # NPN_TERM_VIA_COLS = 3
+    # NPN_COL_X_OFFSET = 0.645
 
     # Routing and Taper Dimensions
-    COL_RSIL_Y_OFFSET = 2.0
-    OUT_STUB_STAGE_W1 = 4.0
-    TAPER_LENGTH_SHORT = 3.0
+    # COL_RSIL_Y_OFFSET = 2.0
+    # OUT_STUB_STAGE_W1 = 4.0
+    # TAPER_LENGTH_SHORT = 3.0
 
     rfmim1 = c.add_ref(rfcmim(width=rfcmim_width, length=rfcmim_length))
     rhigh1 = c.add_ref(cells.resistors.rhigh(dy=6.0, dx=1.9, model="rhigh"))
