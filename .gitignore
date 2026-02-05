@@ -2,8 +2,8 @@ ihp-klayout/
 docs/cells.rst
 
 # Simulation outputs
+sim-data-*/
 palace-sim-*/
-dev-palace-simulation-*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
