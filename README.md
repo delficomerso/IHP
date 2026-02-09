@@ -51,4 +51,6 @@ python install_tech.py
 ## Documentation
 
 - [gdsfactory docs](https://gdsfactory.github.io/gdsfactory/)
-- [IHP docs](https://gdsfactory.github.io/ihp/) and [code](https://github.com/gdsfactory/ihp)
+- [IHP docs from GDSFactory](https://gdsfactory.github.io/IHP/) and [code](https://github.com/gdsfactory/ihp)
+- [IHP documentation](https://ihp-open-pdk-docs.readthedocs.io/en/latest/#)
+- [IHP component diagrams](https://ihp-open-pdk-docs.readthedocs.io/en/latest/verification/lvs/04_01_fets.html)
