@@ -1,10 +1,10 @@
 """Cells."""
 
+from .fixed import *  # noqa: I001
 from .bipolar import *
 from .bondpads import *
 from .capacitors import *
 from .containers import *
-from .fixed import *
 from .inductors import *
 from .passives import *
 from .primitives import *
