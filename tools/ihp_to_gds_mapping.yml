@@ -1,0 +1,600 @@
+add_pads_top:
+  allow_width_mismatch: true
+  bend: wire_corner
+  component: straight
+  component_name: null
+  cross_section: metal_routing
+  fanout_length: 80
+  pad: CuPillarPad
+  pad_pitch: 100.0
+  pad_port_name: e1
+  port_names: null
+  port_type: electrical
+  route_width: 0
+  straight_separation: 15.0
+  taper: null
+bend_euler:
+  allow_min_radius_violation: false
+  angle: 90
+  cross_section: strip
+  p: 0.5
+  radius: null
+  width: null
+bend_metal:
+  angle: 90
+  cross_section: metal_routing
+  radius: null
+  width: null
+bend_s:
+  allow_min_radius_violation: false
+  cross_section: strip
+  size: null
+  width: null
+bend_s_metal:
+  allow_min_radius_violation: true
+  cross_section: metal_routing
+  size: null
+  width: null
+bipolar:
+  area: 1.0
+  model: npn
+  spice_lib: null
+bondpad:
+  bbox_offsets: null
+  diameter: diameter
+  flip_chip: FlipChip
+  layer_dfpad: dfpaddrawing
+  layer_passiv: Passivpillar
+  layer_top_metal: TopMetal2drawing
+  shape: shape
+bondpad_array:
+  bbox_offsets: null
+  layer_dfpad: dfpaddrawing
+  layer_passiv: Passivpillar
+  layer_top_metal: TopMetal2drawing
+  n_pads: 4
+  pad_diameter: 80.0
+  pad_pitch: 100.0
+  shape: octagon
+capacitor:
+  capacitance: 1.0e-12
+  model: cpoly
+cccs:
+  gain: 1.0
+ccvs:
+  rm: 1000.0
+cmim:
+  layer_cap_mark: MemCapdrawing
+  layer_m4nofill: Metal4nofill
+  layer_m5nofill: Metal5nofill
+  layer_metal5: Metal5drawing
+  layer_metal5label: Metal5label
+  layer_metal5pin: Metal5pin
+  layer_mim: MIMdrawing
+  layer_text: TEXTdrawing
+  layer_tm1nofill: TopMetal1nofill
+  layer_tm2nofill: TopMetal2nofill
+  layer_topmetal1: TopMetal1drawing
+  layer_topmetal1label: TopMetal1label
+  layer_topmetal1pin: TopMetal1pin
+  layer_vmim: Vmimdrawing
+  length: l
+  model: model
+  width: w
+cmom:
+  botmetal: Metal1
+  layer_cap_mark: MemCapdrawing
+  layer_metal1: Metal1drawing
+  layer_metal1label: Metal1label
+  layer_metal1nofill: Metal1nofill
+  layer_metal1pin: Metal1pin
+  layer_metal2: Metal2drawing
+  layer_metal2label: Metal2label
+  layer_metal2nofill: Metal2nofill
+  layer_metal2pin: Metal2pin
+  layer_metal3: Metal3drawing
+  layer_metal3label: Metal3label
+  layer_metal3nofill: Metal3nofill
+  layer_metal3pin: Metal3pin
+  layer_metal4: Metal4drawing
+  layer_metal4label: Metal4label
+  layer_metal4nofill: Metal4nofill
+  layer_metal4pin: Metal4pin
+  layer_metal5: Metal5drawing
+  layer_metal5label: Metal5label
+  layer_metal5nofill: Metal5nofill
+  layer_metal5pin: Metal5pin
+  layer_text: TEXTdrawing
+  length: 4.0
+  model: cmom
+  nfingers: 1
+  spacing: 0.26
+  topmetal: Metal3
+dantenna:
+  addRecLayer: addRecLayer
+  guardRingDistance: 1.0
+  guardRingType: none
+  length: l
+  width: w
+diode:
+  area: 1.0e-12
+  model: diol
+  pj: 1.0e-06
+dpantenna:
+  addRecLayer: addRecLayer
+  guardRingDistance: 1.0
+  guardRingType: none
+  length: l
+  width: w
+esd:
+  model: model
+esd_nmos:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_esd: Recogesd
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_metal2: Metal2drawing
+  layer_nsd: nSDdrawing
+  layer_pwell: PWelldrawing
+  length: 0.5
+  model: nmoscl_2
+  nf: 10
+  width: 50.0
+guard_ring:
+  bbox: null
+  guardRingSpacing: 0.14
+  guardRingType: psub
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  path: null
+  width: 0.5
+inductor:
+  inductance: 1.0e-09
+  model: lind
+inductor2:
+  diameter: 25.35
+  inductance: 3.3303e-11
+  layer_ind_pin: INDpin
+  layer_inductor: INDdrawing
+  layer_metal_1: TopMetal1drawing
+  layer_metal_1_pin: TopMetal2pin
+  layer_metal_2: TopMetal2drawing
+  layer_metal_2_pin: TopMetal2pin
+  layer_via: TopVia2drawing
+  layers_no_fill: null
+  resistance: 0.5777
+  space: 2.1
+  terminal_1_length: 30.0
+  turns: 1
+  vias_width: 0.9
+  width: 2.0
+inductor3:
+  diameter: 25.84
+  inductance: 2.215e-10
+  layer_ind_pin: INDpin
+  layer_inductor: INDdrawing
+  layer_metal_1: TopMetal1drawing
+  layer_metal_1_pin: TopMetal2pin
+  layer_metal_2: TopMetal2drawing
+  layer_metal_2_pin: TopMetal2pin
+  layer_via: TopVia2drawing
+  layers_no_fill: null
+  resistance: 1.386
+  space: 2.1
+  terminal_1_length: 30.0
+  turns: 2
+  vias_width: 0.9
+  width: 2.0
+isource:
+  ac: 0.0
+  dc: 0.0
+mos:
+  length: 1.0e-07
+  model: nmos
+  nf: 1
+  spice_lib: null
+  w: 1.0e-06
+nmos:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  length: l
+  m: m
+  model: model
+  nf: 1
+  width: w
+nmosHV:
+  guardRingDistance: 1
+  guardRingType: none
+  l: l
+  ng: ng
+  w: w
+nmos_hv:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_thickgateox: ThickGateOxdrawing
+  length: 0.45
+  m: 1
+  model: sg13_hv_nmos
+  nf: 1
+  width: 1.0
+no_filler_stack:
+  length: 10
+  noAct: 'Yes'
+  noGP: 'Yes'
+  noM1: 'Yes'
+  noM2: 'Yes'
+  noM3: 'Yes'
+  noM4: 'Yes'
+  noM5: 'Yes'
+  noTM1: 'Yes'
+  noTM2: 'Yes'
+  width: 10
+npn13G2:
+  emitter_length: le
+  emitter_width: we
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  layer_pwell: PWelldrawing
+  layer_trans: TRANSdrawing
+  m: m
+  model: model
+npn13G2L:
+  emitter_length: le
+  emitter_width: we
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  layer_pwell: PWelldrawing
+  layer_trans: TRANSdrawing
+  m: m
+  model: model
+npn13G2V:
+  emitter_length: le
+  emitter_width: we
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  layer_pwell: PWelldrawing
+  layer_trans: TRANSdrawing
+  m: m
+  model: model
+ntap1:
+  cols: 1
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  length: l
+  rows: 1
+  width: w
+pack_doe:
+  do_permutations: false
+  doe: null
+  function: null
+  settings: null
+pack_doe_grid:
+  do_permutations: false
+  doe: null
+  function: null
+  settings: null
+  with_text: false
+pmos:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  length: l
+  m: m
+  model: model
+  nf: 1
+  width: w
+pmosHV:
+  guardRingDistance: 1
+  guardRingType: none
+  l: l
+  ng: ng
+  w: w
+pmos_hv:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  layer_thickgateox: ThickGateOxdrawing
+  length: 0.45
+  m: 1
+  model: sg13_hv_pmos
+  nf: 1
+  width: 1.0
+pnpMPA:
+  emitter_length: l
+  emitter_width: w
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  layer_pwell: PWelldrawing
+  layer_trans: TRANSdrawing
+  m: m
+  model: model
+ptap1:
+  cols: 1
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_metal1: Metal1drawing
+  layer_psd: pSDdrawing
+  length: l
+  rows: 1
+  width: w
+resistor:
+  model: rpoly
+  resistance: 1000.0
+rfcmim:
+  layer_activ: Activdrawing
+  layer_activnoqrc: Activnoqrc
+  layer_cap_mark: MemCapdrawing
+  layer_cont: Contdrawing
+  layer_m4nofill: Metal4nofill
+  layer_m5nofill: Metal5nofill
+  layer_metal1: Metal1drawing
+  layer_metal1label: Metal1label
+  layer_metal1noqrc: Metal1noqrc
+  layer_metal1pin: Metal1pin
+  layer_metal2noqrc: Metal2noqrc
+  layer_metal3noqrc: Metal3noqrc
+  layer_metal4noqrc: Metal4noqrc
+  layer_metal5: Metal5drawing
+  layer_metal5label: Metal5label
+  layer_metal5noqrc: Metal5noqrc
+  layer_metal5pin: Metal5pin
+  layer_mim: MIMdrawing
+  layer_psd: pSDdrawing
+  layer_pwellblock: PWellblock
+  layer_text: TEXTdrawing
+  layer_tm1nofill: TopMetal1nofill
+  layer_tm2nofill: TopMetal2nofill
+  layer_topmetal1: TopMetal1drawing
+  layer_topmetal1label: TopMetal1label
+  layer_topmetal1noqrc: TopMetal1noqrc
+  layer_topmetal1pin: TopMetal1pin
+  layer_vmim: Vmimdrawing
+  length: l
+  model: model
+  width: w
+rfnmos:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  length: l
+  m: m
+  model: model
+  nf: 2
+  width: w
+rfnmosHV:
+  Met2Cont: Met2Cont
+  cnt_rows: cnt_rows
+  gat_ring: gat_ring
+  guard_ring: guard_ring
+  l: l
+  ng: ng
+  w: w
+rfpmos:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nwell: NWelldrawing
+  layer_psd: pSDdrawing
+  length: l
+  m: m
+  model: model
+  nf: 2
+  width: w
+rfpmosHV:
+  Met2Cont: Met2Cont
+  cnt_rows: cnt_rows
+  gat_ring: gat_ring
+  guard_ring: guard_ring
+  l: l
+  ng: ng
+  w: w
+rhigh:
+  dx: 0.5
+  dy: 0.96
+  layer_block: EXTBlockdrawing
+  layer_contact: Contdrawing
+  layer_gate: GatPolydrawing
+  layer_heat: HeatResdrawing
+  layer_metal1: Metal1drawing
+  layer_metal1_pin: Metal1pin
+  layer_nSD: nSDdrawing
+  layer_pSD: pSDdrawing
+  layer_poly: PolyResdrawing
+  layer_sal_block: SalBlockdrawing
+  model: model
+  resistance: null
+rppd:
+  dx: 0.5
+  dy: 0.5
+  layer_block: EXTBlockdrawing
+  layer_contact: Contdrawing
+  layer_gate: GatPolydrawing
+  layer_heat: HeatResdrawing
+  layer_metal1: Metal1drawing
+  layer_metal1_pin: Metal1pin
+  layer_pSD: pSDdrawing
+  layer_poly: PolyResdrawing
+  layer_sal_block: SalBlockdrawing
+  model: model
+  resistance: null
+rsil:
+  dx: 0.5
+  dy: 0.5
+  layer_block: EXTBlockdrawing
+  layer_contact: Contdrawing
+  layer_gate: GatPolydrawing
+  layer_heat: HeatResdrawing
+  layer_metal1: Metal1drawing
+  layer_metal1_pin: Metal1pin
+  layer_poly: PolyResdrawing
+  layer_res_mark: RESdrawing
+  model: model
+  resistance: null
+sealring:
+  height: 200.0
+  layer_metal1: Metal1drawing
+  layer_metal2: Metal2drawing
+  layer_metal3: Metal3drawing
+  layer_metal4: Metal4drawing
+  layer_metal5: Metal5drawing
+  layer_sealring: EdgeSealdrawing
+  layer_topmetal1: TopMetal1drawing
+  layer_topmetal2: TopMetal2drawing
+  layer_topvia1: TopVia1drawing
+  layer_topvia2: TopVia2drawing
+  layer_via1: Via1drawing
+  layer_via2: Via2drawing
+  layer_via3: Via3drawing
+  layer_via4: Via4drawing
+  ring_width: 5.0
+  width: w
+straight:
+  cross_section: strip
+  length: 10
+  npoints: 2
+  width: null
+straight_metal:
+  cross_section: metal_routing
+  length: 10
+  width: null
+subckt:
+  model: null
+  params: null
+  ports: null
+  spice_lib: null
+svaricap:
+  layer_activ: Activdrawing
+  layer_cont: Contdrawing
+  layer_gatpoly: GatPolydrawing
+  layer_metal1: Metal1drawing
+  layer_nsd: nSDdrawing
+  layer_nwell: NWelldrawing
+  layer_varicap: Varicapdrawing
+  length: 1.0
+  model: sg13_hv_svaricap
+  nf: 1
+  width: 1.0
+text_rectangular:
+  justify: left
+  layer: TopMetal2drawing
+  size: 3
+  text: abc
+text_rectangular_multi_layer:
+  layers: null
+  text: abc
+  text_factory: text_rectangular
+tline:
+  td: 1.0e-09
+  z0: 50.0
+vccs:
+  gm: 0.001
+vcvs:
+  gain: 1.0
+via_array:
+  columns: 2
+  layer_cont: Contdrawing
+  layer_topvia1: TopVia1drawing
+  layer_topvia2: TopVia2drawing
+  layer_via1: Via1drawing
+  layer_via2: Via2drawing
+  layer_via3: Via3drawing
+  layer_via4: Via4drawing
+  layer_vmim: Vmimdrawing
+  rows: 2
+  via_enclosure: null
+  via_size: null
+  via_spacing: null
+  via_type: Via1
+via_stack:
+  bottom_layer: b_layer
+  layer_metal1: Metal1drawing
+  layer_metal2: Metal2drawing
+  layer_metal3: Metal3drawing
+  layer_metal4: Metal4drawing
+  layer_metal5: Metal5drawing
+  layer_topmetal1: TopMetal1drawing
+  layer_topmetal2: TopMetal2drawing
+  layer_topvia1: TopVia1drawing
+  layer_topvia2: TopVia2drawing
+  layer_via1: Via1drawing
+  layer_via2: Via2drawing
+  layer_via3: Via3drawing
+  layer_via4: Via4drawing
+  size: null
+  top_layer: t_layer
+  vn_columns: vn_columns
+  vn_rows: vn_rows
+  vt1_columns: vt1_columns
+  vt1_rows: vt1_rows
+  vt2_columns: vt2_columns
+  vt2_rows: vt2_rows
+via_stack_with_pads:
+  bottom_layer: Metal1
+  layer_metal1: Metal1drawing
+  layer_metal2: Metal2drawing
+  layer_metal3: Metal3drawing
+  layer_metal4: Metal4drawing
+  layer_metal5: Metal5drawing
+  layer_topmetal1: TopMetal1drawing
+  layer_topmetal2: TopMetal2drawing
+  layer_topvia1: TopVia1drawing
+  layer_topvia2: TopVia2drawing
+  layer_via1: Via1drawing
+  layer_via2: Via2drawing
+  layer_via3: Via3drawing
+  layer_via4: Via4drawing
+  pad_size: null
+  pad_spacing: 50.0
+  size: null
+  top_layer: TopMetal2
+vsource:
+  ac: 0.0
+  dc: 0.0
+wire_corner:
+  cross_section: metal_routing
+  width: null
+wire_corner45:
+  cross_section: metal_routing
+  layer: null
+  radius: 10
+  width: null
+  with_corner90_ports: true

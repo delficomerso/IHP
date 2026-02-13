@@ -1,0 +1,440 @@
+NoFillerStack:
+  Display: Display
+  cdf_version: CDF Version
+  l: Length
+  minLW: w/l min
+  noAct: no Activ filler
+  noGP: no GatPoly filler
+  noM1: no M1 filler
+  noM2: no M2 filler
+  noM3: no M3 filler
+  noM4: no M4 filler
+  noM5: no M5 filler
+  noTM1: no TM1 filler
+  noTM2: no TM2 filler
+  w: Width
+SVaricap:
+  Display: Display
+  Nx: Choose the columns number
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  l: Length
+  model: Model name
+  w: Width
+bondpad:
+  Display: Display
+  FlipChip: Flip Chip
+  addFillerEx: Metal Filler Exclusion
+  bottomMetal: BottomMetal
+  cdf_version: CDF Version
+  diameter: Diameter
+  fill: Fill Metals
+  hwquota: Height-width quota
+  model: Model name
+  padPin: 'padPin name:'
+  padType: Pad type
+  passEncl: Passiv enclosure in TM2
+  shape: Shape
+  stack: Stack Metals
+  topMetal: TopMetal
+cmim:
+  C: C
+  Calculate: Calculate
+  Cmax: Cmax
+  Cspec: Cspec [F/sqm]
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  cdf_version: CDF Version
+  ic: Initial condition
+  l: Length
+  m: Multiplier
+  model: Model name
+  trise: Temp rise from ambient
+  w: Width
+dantenna:
+  Calculate: Calculate
+  Display: Display
+  Vd: Initial diode voltage
+  a: Device area
+  addRecLayer: Add Recognition Layer
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  dtemp: Temperature difference
+  l: Length
+  m: Multiplier
+  mode: Linearized Region
+  model: Model name
+  'off': Device initially off
+  p: Device perimeter
+  perim: Junction perimeter factor
+  region: Estimated operating region
+  trise: Temp rise from ambient
+  w: Width
+dpantenna:
+  Calculate: Calculate
+  Display: Display
+  Vd: Initial diode voltage
+  a: Device area
+  addRecLayer: Add Recognition Layer
+  cdf_version: CDF Version
+  dtemp: Temperature difference
+  l: Length
+  m: Multiplier
+  mode: Linearized Region
+  model: Model name
+  'off': Device initially off
+  p: Device perimeter
+  perim: Junction perimeter factor
+  region: Estimated operating region
+  trise: Temp rise from ambient
+  w: Width
+esd:
+  model: Model name
+inductor2: {}
+inductor3: {}
+inductors:
+  Display: Display
+  Dmin: Dmin
+  Smin: Smin
+  Wmin: Wmin
+  blockqrc: Block QRC layer
+  cdf_version: CDF Version
+  d: The distance in the center of the inductor
+  l: Inductance
+  lEstim: Inductance (estim.)
+  mergeStat: Layer mask
+  minNr_t: Minimum number of turns
+  model: Model name
+  nr_r: The number of turns
+  r: Resistance
+  rEstim: Resistance (estim.)
+  s: Space
+  subE: Substrate Etching
+  w: Width
+nmos:
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+nmosHV:
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+npn13G2:
+  CMetY1: CMetY1
+  CMetY2: CMetY2
+  Display: Display
+  Iarea: Ic,max/squm@Uce=2V
+  Icmax: Ic,max@Uce=2V (50%@0.5V)
+  Nx: x-Multiplier
+  Ny: y-Multiplier
+  STI: STI
+  Text: Text
+  area: Area Factor
+  baspolyx: baspolyx
+  bipwinx: bipwinx
+  bipwiny: bipwiny
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  empolyx: empolyx
+  empolyy: empolyy
+  le: Emitter Length
+  m: Multiplier
+  model: Model name
+  trise: Temp rise from ambient
+  we: Emitter Width
+npn13G2L:
+  Display: Display
+  Iarea: Ic,max/squm@Uce=2V
+  Icmax: Ic,max@Uce=2V (50%@0.5V)
+  Nx: x-Multiplier
+  Vbe: Base-emitter voltage
+  Vce: Collector-emitter voltage
+  area: Area Factor
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  le: Emitter Length
+  m: Multiplier
+  model: Model name
+  trise: Temp rise from ambient
+  we: Emitter Width
+npn13G2V:
+  Display: Display
+  Iarea: Ic,max/squm@Uce=2V
+  Icmax: Ic,max@Uce=2V (50%@0.5V)
+  Nx: x-Multiplier
+  Vbe: Base-emitter voltage
+  Vce: Collector-emitter voltage
+  area: Area Factor
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  le: Emitter Length
+  m: Multiplier
+  model: Model name
+  trise: Temp rise from ambient
+  we: Emitter Width
+ntap1:
+  A: Area
+  Calculate: Calculate
+  Display: Display
+  Lmin: Lmin
+  Perim: Perimeter
+  R: R
+  Rspec: Rspec [R*m^2]
+  Wmin: Wmin
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  w: Width
+pmos:
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+pmosHV:
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+pnpMPA:
+  Calculate: Calculate
+  Display: Display
+  a: Area
+  ac: Collector area
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  p: Perimeter
+  pc: Collector perimeter
+  region: Estimated operating region
+  trise: Temp rise from ambient
+  w: Width
+ptap1:
+  A: Area
+  Calculate: Calculate
+  Display: Display
+  Lmin: Lmin
+  Perim: Perimeter
+  R: R
+  Rspec: Rspec [R*m^2]
+  Wmin: Wmin
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  w: Width
+rfcmim:
+  C: C
+  Calculate: Calculate
+  Cmax: Cmax
+  Cspec: Cspec [F/sqm]
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  cdf_version: CDF Version
+  ic: Initial condition
+  l: Length
+  m: Multiplier
+  model: Model name
+  trise: Temp rise from ambient
+  w: Width
+  wfeed: Feed width
+rfmosfet_base:
+  Met2Cont: Metal2 contact
+  cnt_rows: Contact rows
+  gat_ring: Gate ring
+  guard_ring: Guard ring
+  l: Length
+  ng: Number of Gates
+  w: Width
+rfnmos:
+  Display: Display
+  Lmin: Lmin
+  Met2Cont: Metal2 contact
+  Wmin: Wmin
+  calculate: Calculate as,ad,ps,pd
+  cdf_version: CDF Version
+  cnt_rows: Contact rows
+  gat_ring: Gate ring
+  guard_ring: Guard ring
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  rfmode: rfmode
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+rfnmosHV:
+  Display: Display
+  Lmin: Lmin
+  Met2Cont: Metal2 contact
+  Wmin: Wmin
+  calculate: Calculate as,ad,ps,pd
+  cdf_version: CDF Version
+  cnt_rows: Contact rows
+  gat_ring: Gate ring
+  guard_ring: Guard ring
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  rfmode: rfmode
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+rfpmos:
+  Display: Display
+  Lmin: Lmin
+  Met2Cont: Metal2 contact
+  Wmin: Wmin
+  calculate: Calculate as,ad,ps,pd
+  cdf_version: CDF Version
+  cnt_rows: Contact rows
+  gat_ring: Gate ring
+  guard_ring: Guard ring
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  rfmode: rfmode
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+rfpmosHV:
+  Display: Display
+  Lmin: Lmin
+  Met2Cont: Metal2 contact
+  Wmin: Wmin
+  calculate: Calculate as,ad,ps,pd
+  cdf_version: CDF Version
+  cnt_rows: Contact rows
+  gat_ring: Gate ring
+  guard_ring: Guard ring
+  l: Length
+  m: Multiplier
+  model: Model name
+  ng: Number of Gates
+  rfmode: rfmode
+  trise: Temp rise from ambient
+  w: Width
+  ws: SingleWidth
+rhigh:
+  Calculate: Calculate
+  Display: Display
+  Imax: Imax
+  Lmin: Lmin
+  PSmin: PSmin
+  PWB: PWell Blockage
+  R: R
+  Recommendation: Recommendation
+  Rkspec: Rkspec [Ohm/cont]
+  Rspec: Rspec [Ohm/sq]
+  Rzspec: Rzspec [Ohm*m]
+  Wmin: Wmin
+  b: Bends
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ps: Poly Space
+  tc1: Temperature coefficient 1
+  tc2: Temperature coefficient 2
+  trise: Temp rise from ambient
+  w: Width
+rppd:
+  Calculate: Calculate
+  Display: Display
+  Imax: Imax
+  Lmin: Lmin
+  PSmin: PSmin
+  PWB: PWell Blockage
+  R: R
+  Recommendation: Recommendation
+  Rkspec: Rkspec [Ohm/cont]
+  Rspec: Rspec [Ohm/sq]
+  Rzspec: Rzspec [Ohm*m]
+  Wmin: Wmin
+  b: Bends
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ps: Poly Space
+  tc1: Temperature coefficient 1
+  tc2: Temperature coefficient 2
+  trise: Temp rise from ambient
+  w: Width
+rsil:
+  Calculate: Calculate
+  Display: Display
+  Imax: Imax
+  Lmin: Lmin
+  PSmin: PSmin
+  R: R
+  Rkspec: Rkspec [Ohm/cont]
+  Rspec: Rspec [Ohm/sq]
+  Rzspec: Rzspec [Ohm*m]
+  Wmin: Wmin
+  bn: Bulk node connection
+  cdf_version: CDF Version
+  l: Length
+  m: Multiplier
+  model: Model name
+  ps: Poly Space
+  tc1: Temperature coefficient 1
+  tc2: Temperature coefficient 2
+  trise: Temp rise from ambient
+  w: Width
+sealring:
+  Display: Display
+  Lmin: Lmin
+  Wmin: Wmin
+  addLabel: Add sub! label
+  addSlit: Add Slit
+  cdf_version: CDF Version
+  edgeBox: EdgeSeal.boundary box away from the outer EdgeSeal.drawing
+  l: Length(X-Axis)
+  w: Width(Y-Axis)
+via_stack:
+  b_layer: Bottom layer
+  cdf_version: CDF Version
+  t_layer: Top layer
+  vn_columns: Via_n Columns
+  vn_rows: Via_n Rows
+  vt1_columns: Via_t1 Columns
+  vt1_rows: Via_t1 Rows
+  vt2_columns: Via_t2 Columns
+  vt2_rows: Via_t2 Rows
