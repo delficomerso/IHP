@@ -6,7 +6,7 @@ Welcome to Amazing Design Open Source PDK documentation!
 
 .. toctree::
     :hidden:
-    
+
     specification
     designdata
     validation
@@ -18,4 +18,3 @@ Welcome to Amazing Design Open Source PDK documentation!
     :align: center
     :alt: IHP Logo Image.
     :width: 400
-

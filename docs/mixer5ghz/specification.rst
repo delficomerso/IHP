@@ -16,7 +16,7 @@ To characterize circuits at both conventional and cryogenic temperatures, a chip
 
 .. image:: _static/schematicOSC.png
     :align: center
-    :alt: Schematic Oscilator
+    :alt: Schematic Oscillator
     :width: 600
 
 
@@ -48,7 +48,3 @@ Cross-Coupled Oscillator:
 -	VCC: Power supply terminal
 -	ICC: Bias current terminal
 - GND: Ground terminal
-
-
-
-
