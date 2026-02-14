@@ -827,7 +827,6 @@ def _rf_mos_core(
         )
 
     # -- GDSFactory ports --
-    m1_layer = (8, 0)  # Metal1 drawing
 
     # Source port
     s_cx = (src_pin_x1 + src_pin_x2) / 2
@@ -838,7 +837,8 @@ def _rf_mos_core(
         center=(s_cx, s_cy),
         width=_even_dbu(s_w),
         orientation=270,
-        layer=m1_layer,
+        layer=layer_metal1_pin,
+        port_type="electrical",
     )
 
     # Drain port
@@ -850,7 +850,8 @@ def _rf_mos_core(
         center=(d_cx, d_cy),
         width=_even_dbu(d_w),
         orientation=270,
-        layer=m1_layer,
+        layer=layer_metal1_pin,
+        port_type="electrical",
     )
 
     # Gate port
@@ -862,7 +863,8 @@ def _rf_mos_core(
         center=(g_cx, g_cy),
         width=_even_dbu(g_h),
         orientation=180,
-        layer=m1_layer,
+        layer=layer_metal1_pin,
+        port_type="electrical",
     )
 
     # TIE port (guard ring)
@@ -872,7 +874,8 @@ def _rf_mos_core(
             center=((tie_pin_x1 + tie_pin_x2) / 2, (tie_pin_y1 + tie_pin_y2) / 2),
             width=_even_dbu(tie_pin_y2 - tie_pin_y1),
             orientation=270,
-            layer=m1_layer,
+            layer=layer_metal1_pin,
+            port_type="electrical",
         )
 
     return c

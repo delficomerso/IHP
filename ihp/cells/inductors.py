@@ -24,7 +24,7 @@ def inductor2(
     layer_metal_1: LayerSpec = "TopMetal1drawing",
     layer_metal_2: LayerSpec = "TopMetal2drawing",
     layer_inductor: LayerSpec = "INDdrawing",
-    layer_metal_1_pin: LayerSpec = "TopMetal2pin",
+    layer_metal_1_pin: LayerSpec = "TopMetal1pin",
     layer_metal_2_pin: LayerSpec = "TopMetal2pin",
     layer_ind_pin: LayerSpec = "INDpin",
     layer_via: LayerSpec = "TopVia2drawing",
@@ -104,7 +104,8 @@ def inductor2(
             center=(-w / 2 - s / 2, 0),
             width=w,
             orientation=270,
-            layer=layer_metal_2,
+            layer=layer_metal_2_pin,
+            port_type="electrical",
         )
 
         for layer in Pin_layers_2:
@@ -120,7 +121,8 @@ def inductor2(
             center=(w / 2 + s / 2, 0),
             width=w,
             orientation=270,
-            layer=layer_metal_2,
+            layer=layer_metal_2_pin,
+            port_type="electrical",
         )
 
         for layer in Pin_layers_2:
@@ -132,7 +134,12 @@ def inductor2(
         )
         port_short.move((-w / 2, 0))
         c.add_port(
-            name="P1", center=(0, 0), width=w, orientation=270, layer=layer_metal_2
+            name="P1",
+            center=(0, 0),
+            width=w,
+            orientation=270,
+            layer=layer_metal_2_pin,
+            port_type="electrical",
         )
 
         for layer in Pin_layers_2:
@@ -148,7 +155,8 @@ def inductor2(
             center=(-(w + s), 0),
             width=w,
             orientation=270,
-            layer=layer_metal_1,
+            layer=layer_metal_1_pin,
+            port_type="electrical",
         )
 
         for layer in Pin_layers_1:
@@ -160,7 +168,12 @@ def inductor2(
         )
         port_long_2.move(((w + s) - w / 2, 0))
         c.add_port(
-            name="P3", center=(w + s, 0), width=w, orientation=270, layer=layer_metal_1
+            name="P3",
+            center=(w + s, 0),
+            width=w,
+            orientation=270,
+            layer=layer_metal_1_pin,
+            port_type="electrical",
         )
 
         for layer in Pin_layers_1:
@@ -305,7 +318,7 @@ def inductor3(
     layer_metal_1: LayerSpec = "TopMetal1drawing",
     layer_metal_2: LayerSpec = "TopMetal2drawing",
     layer_inductor: LayerSpec = "INDdrawing",
-    layer_metal_1_pin: LayerSpec = "TopMetal2pin",
+    layer_metal_1_pin: LayerSpec = "TopMetal1pin",
     layer_metal_2_pin: LayerSpec = "TopMetal2pin",
     layer_ind_pin: LayerSpec = "INDpin",
     layer_via: LayerSpec = "TopVia2drawing",
