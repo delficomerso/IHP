@@ -15,35 +15,7 @@ import gdsfactory as gf
 from gdsfactory import Component
 from gdsfactory.typings import LayerSpec
 
-from ..tech import techParams as _tech
-
-# ---------------------------------------------------------------------------
-# Design rule constants from tech params
-# ---------------------------------------------------------------------------
-_EPSILON = _tech["epsilon1"]  # 0.001
-_GRID = _tech["grid"]  # 0.005
-_IGRID = 1.0 / _GRID  # 200
-
-_CONT_SIZE = _tech["Cnt_a"]  # 0.16  contact square size
-_CONT_DIST = _tech["Cnt_b"]  # 0.18  contact spacing
-_CONT_ACTIV_OVER = _tech["Cnt_c"]  # 0.07  contact enclosure by active
-_CONT_GATE_DIST = _tech["Cnt_f"]  # 0.11  gate poly to contact spacing
-_CONT_GATE_DIST_SMALL = _CONT_ACTIV_OVER + _tech["Gat_d"]  # 0.14
-
-_M1_OVER = _tech["M1_c"]  # 0.0  metal1 enclosure of contact
-_M1_ENDCAP = _tech["M1_c1"]  # 0.05  metal1 endcap beyond contacts
-
-_GATPOLY_ACTIV_OVER = _tech["Gat_c"]  # 0.18  poly extension over active
-
-_CONT_ACT_MIN = 2 * _CONT_ACTIV_OVER + _CONT_SIZE  # 0.30
-
-_PSD_ACTIV_OVER = _tech["pSD_c"]  # 0.18
-_PSD_GATE_OVER_LV = _tech["pSD_i"]  # 0.3
-_PSD_GATE_OVER_HV = _tech["pSD_i1"]  # 0.4
-_NW_ACTIV_OVER_LV = _tech["NW_c"]  # 0.31
-_NW_ACTIV_OVER_HV = _tech["NW_c1"]  # 0.62
-_TGO_ACTIV = _tech["TGO_a"]  # 0.27
-_TGO_GATPOLY = _tech["TGO_c"]  # 0.34
+from ..tech import TECH
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +30,7 @@ def _fix(value):
 
 def _grid_fix(x: float) -> float:
     """Snap to manufacturing grid (matches PyCell GridFix/tog/Snap)."""
-    return _fix(x * _IGRID + _EPSILON) * _GRID
+    return _fix(x * (1.0 / TECH.grid) + TECH.epsilon) * TECH.grid
 
 
 def _add_rect(
@@ -105,7 +77,7 @@ def _place_contacts(
     w = xh - xl
     h = yh - yl
 
-    nx = _fix((w - ox * 2 + ds) / (ws + ds) + _EPSILON)
+    nx = _fix((w - ox * 2 + ds) / (ws + ds) + TECH.epsilon)
     if nx <= 0:
         return
 
@@ -114,7 +86,7 @@ def _place_contacts(
     else:
         dsx = (w - ox * 2 - ws * nx) / (nx - 1)
 
-    ny = _fix((h - oy * 2 + ds) / (ws + ds) + _EPSILON)
+    ny = _fix((h - oy * 2 + ds) / (ws + ds) + TECH.epsilon)
     if ny <= 0:
         return
 
@@ -185,26 +157,26 @@ def _mos_core(
     c = Component()
 
     # Tech params
-    epsilon = _EPSILON
-    endcap = _M1_ENDCAP
-    cont_size = _CONT_SIZE
-    cont_dist = _CONT_DIST
-    cont_Activ_overRec = _CONT_ACTIV_OVER
-    cont_metall_over = _M1_OVER
-    gatpoly_Activ_over = _GATPOLY_ACTIV_OVER
-    gatpoly_cont_dist = _CONT_GATE_DIST
-    smallw_gatpoly_cont_dist = _CONT_GATE_DIST_SMALL
-    contActMin = _CONT_ACT_MIN
+    epsilon = TECH.epsilon
+    endcap = TECH.m1_endcap
+    cont_size = TECH.cont_size
+    cont_dist = TECH.cont_spacing
+    cont_Activ_overRec = TECH.cont_enc_active
+    cont_metall_over = TECH.m1_over
+    gatpoly_Activ_over = TECH.gatpoly_activ_over
+    gatpoly_cont_dist = TECH.cont_gate_dist
+    smallw_gatpoly_cont_dist = TECH.cont_enc_active + TECH.gat_d
+    contActMin = 2 * TECH.cont_enc_active + TECH.cont_size
 
     # PMOS-specific params
     if is_pmos:
-        psd_pActiv_over = _PSD_ACTIV_OVER
-        psd_PFET_over = _PSD_GATE_OVER_HV if is_hv else _PSD_GATE_OVER_LV
-        nwell_pActiv_over = _NW_ACTIV_OVER_HV if is_hv else _NW_ACTIV_OVER_LV
+        psd_pActiv_over = TECH.psd_activ_over
+        psd_PFET_over = TECH.psd_gate_over_hv if is_hv else TECH.psd_gate_over_lv
+        nwell_pActiv_over = TECH.nw_activ_over_hv if is_hv else TECH.nw_activ_over_lv
 
     # HV params
-    thGateOxGat = _TGO_GATPOLY
-    thGateOxAct = _TGO_ACTIV
+    thGateOxGat = TECH.tgo_gatpoly
+    thGateOxAct = TECH.tgo_activ
 
     # Endcap adjustment
     if endcap < cont_metall_over:

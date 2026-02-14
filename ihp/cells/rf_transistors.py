@@ -12,9 +12,8 @@ import gdsfactory as gf
 from gdsfactory import Component
 from gdsfactory.typings import LayerSpec
 
+from ..tech import TECH
 from .fet_transistors import _add_rect, _even_dbu, _fix, _grid_fix
-
-_EPSILON = 0.001  # local copy to avoid circular concerns
 
 
 # ---------------------------------------------------------------------------
@@ -189,38 +188,42 @@ def _rf_mos_core(
     ngi = nf
     W = _grid_fix(width / ngi)
     L = length
-    # -- Hardcoded RF design rules (matching rfmosfet_base_code.py) --
-    met1_w1 = 0.32
-    contW = 0.16
-    contS = 0.18
-    metWidth = contW + 0.14  # 0.30
-    viaW = 0.19
-    if W < 1.52:
-        viaS = 0.22
+    # -- RF design rules from tech params --
+    met1_w1 = TECH.rf_guard_ring_m1_width
+    contW = TECH.cont_size
+    contS = TECH.cont_spacing
+    metWidth = TECH.cont_size + TECH.rf_sd_metal_width_over  # 0.30
+    viaW = TECH.via1_size_rf
+    if W < TECH.via1_width_threshold:
+        viaS = TECH.via1_spacing_narrow
     else:
-        viaS = 0.29
+        viaS = TECH.via1_spacing_wide
 
     # Channel distance, Active end pieces
-    dc = (0.38 + 0.03) * cnt_rows - 0.03
-    ec = (0.345 + 0.065) * cnt_rows - 0.065
+    dc = (
+        TECH.rf_channel_dist_base + TECH.rf_channel_dist_step
+    ) * cnt_rows - TECH.rf_channel_dist_step
+    ec = (
+        TECH.rf_endpiece_base + TECH.rf_endpiece_step
+    ) * cnt_rows - TECH.rf_endpiece_step
     dce = 0.0
-    if L < 0.14 and W >= 1:
-        dce = 0.005
+    if L < TECH.rf_short_wide_l_threshold and W >= TECH.rf_short_wide_w_threshold:
+        dce = TECH.rf_short_wide_adjust
         dc = dc + dce * 2
         ec = ec + dce
 
     # metal1 gatring, guardring width
-    wgat = 0.3
-    wguard = 0.32
-    wpsd = 0.38
+    wgat = TECH.rf_gate_ring_width
+    wguard = TECH.rf_guard_ring_width
+    wpsd = TECH.rf_psd_ring_width
     # activ-gatring distance hor/vert
     if cnt_rows > 2:
-        dgatx = 0.17
+        dgatx = TECH.rf_active_gate_dist_x_wide
     else:
-        dgatx = 0.13
-    dgaty = 0.235
+        dgatx = TECH.rf_active_gate_dist_x
+    dgaty = TECH.rf_active_gate_dist_y
     # gatring-guardring distance hor/vert
-    dguard = 0.36
+    dguard = TECH.rf_gate_guard_dist
 
     # Active height
     hact = ec + ec + (ngi - 1) * dc + ngi * L
@@ -246,7 +249,7 @@ def _rf_mos_core(
 
     # ThickGateOx extends further for HV
     if is_hv:
-        d_tgo = 0.35 if rfnmos else 0.31
+        d_tgo = TECH.rf_tgo_nmos if rfnmos else TECH.rf_tgo_pmos
         xl_tgo = xl_psd - d_tgo
         yb_tgo = yb_psd - d_tgo
     else:
@@ -255,7 +258,7 @@ def _rf_mos_core(
 
     # NWell for rfpmos extends further
     if not rfnmos:
-        d_nw = 0.35 if is_hv else 0.31
+        d_nw = TECH.rf_nw_pmos_hv if is_hv else TECH.rf_nw_pmos_lv
         final_xl = xl_tgo - d_nw
         final_yb = yb_tgo - d_nw
     else:
@@ -283,9 +286,9 @@ def _rf_mos_core(
         y = y + dc + L
 
     if cnt_rows == 1:
-        u = 0.075
+        u = TECH.rf_gate_cont_margin_single
     else:
-        u = 0.36
+        u = TECH.rf_gate_cont_margin_multi
 
     # Left/right vertical gatpoly stripes (connecting gate fingers)
     _add_rect(
@@ -312,12 +315,18 @@ def _rf_mos_core(
     # For cnt_rows > 1, there's a connecting metal strip
     sd_shapes = []  # Track shapes to be copied
 
-    if cnt_rows > 1:
-        sd_shapes.append((layer_metal1, 0.05, 0.015, W - 0.05, ec - 0.05 - dce))
+    sd_mx = TECH.rf_sd_margin_x
+    sd_my = TECH.rf_sd_margin_y
+    sd_adj = TECH.rf_sd_metal_adjust
+    sd_row_sp = TECH.rf_sd_row_spacing
+    via_enc = TECH.via1_enc
 
-    p1_x = 0.05
-    p2_x = W - 0.05
-    p1_y = 0.015 + metWidth * 0.5 - 0.01
+    if cnt_rows > 1:
+        sd_shapes.append((layer_metal1, sd_mx, sd_my, W - sd_mx, ec - sd_mx - dce))
+
+    p1_x = sd_mx
+    p2_x = W - sd_mx
+    p1_y = sd_my + metWidth * 0.5 - via_enc
     p2_y = p1_y
     for _i in range(1, cnt_rows + 1):
         _metal_cont(
@@ -328,10 +337,10 @@ def _rf_mos_core(
             p2_y,
             layer_metal1,
             layer_cont,
-            metWidth - 0.02,
+            metWidth - sd_adj,
             contW,
             contW,
-            0.05,
+            sd_mx,
             contS,
             shift_x=ox,
             shift_y=oy,
@@ -345,24 +354,24 @@ def _rf_mos_core(
                 p2_y,
                 layer_metal1,
                 layer_cont,
-                metWidth - 0.02,
+                metWidth - sd_adj,
                 contW,
                 contW,
-                0.05,
+                sd_mx,
                 contS,
             )
         )
-        p1_y = p1_y + metWidth - 0.02 + 0.13
+        p1_y = p1_y + metWidth - sd_adj + sd_row_sp
         p2_y = p1_y
 
     # Metal2 + Via1 for first S/D region
     if met2_cont:
         if cnt_rows > 1:
-            sd_shapes.append((layer_metal2, 0.05, 0.015, W - 0.05, ec - 0.05 - dce))
+            sd_shapes.append((layer_metal2, sd_mx, sd_my, W - sd_mx, ec - sd_mx - dce))
 
-        p1_x = 0.05
-        p2_x = W - 0.05
-        p1_y = 0.015 + metWidth * 0.5 - 0.01
+        p1_x = sd_mx
+        p2_x = W - sd_mx
+        p1_y = sd_my + metWidth * 0.5 - via_enc
         p2_y = p1_y
         for _i in range(1, cnt_rows + 1):
             _metal_cont(
@@ -373,10 +382,10 @@ def _rf_mos_core(
                 p2_y,
                 layer_metal2,
                 layer_via1,
-                viaW + 0.01,
+                viaW + via_enc,
                 viaW,
                 viaW,
-                0.05,
+                sd_mx,
                 viaS,
                 shift_x=ox,
                 shift_y=oy,
@@ -390,14 +399,14 @@ def _rf_mos_core(
                     p2_y,
                     layer_metal2,
                     layer_via1,
-                    viaW + 0.01,
+                    viaW + via_enc,
                     viaW,
                     viaW,
-                    0.05,
+                    sd_mx,
                     viaS,
                 )
             )
-            p1_y = p1_y + metWidth - 0.02 + 0.13
+            p1_y = p1_y + metWidth - sd_adj + sd_row_sp
             p2_y = p1_y
 
     # Draw the first connecting metal strip if cnt_rows > 1
@@ -405,19 +414,19 @@ def _rf_mos_core(
         _add_rect(
             c,
             layer_metal1,
-            ox + 0.05,
-            oy + 0.015,
-            ox + (W - 0.05),
-            oy + (ec - 0.05 - dce),
+            ox + sd_mx,
+            oy + sd_my,
+            ox + (W - sd_mx),
+            oy + (ec - sd_mx - dce),
         )
         if met2_cont:
             _add_rect(
                 c,
                 layer_metal2,
-                ox + 0.05,
-                oy + 0.015,
-                ox + (W - 0.05),
-                oy + (ec - 0.05 - dce),
+                ox + sd_mx,
+                oy + sd_my,
+                ox + (W - sd_mx),
+                oy + (ec - sd_mx - dce),
             )
 
     # -- Copy S/D structures for subsequent gate fingers --
@@ -432,25 +441,25 @@ def _rf_mos_core(
             _add_rect(
                 c,
                 layer_metal1,
-                ox + 0.05,
-                oy + 0.015 + y_offset,
-                ox + (W - 0.05),
-                oy + (ec - 0.05 - dce) + y_offset,
+                ox + sd_mx,
+                oy + sd_my + y_offset,
+                ox + (W - sd_mx),
+                oy + (ec - sd_mx - dce) + y_offset,
             )
             if met2_cont:
                 _add_rect(
                     c,
                     layer_metal2,
-                    ox + 0.05,
-                    oy + 0.015 + y_offset,
-                    ox + (W - 0.05),
-                    oy + (ec - 0.05 - dce) + y_offset,
+                    ox + sd_mx,
+                    oy + sd_my + y_offset,
+                    ox + (W - sd_mx),
+                    oy + (ec - sd_mx - dce) + y_offset,
                 )
 
         # Copy metal+contact rows
-        p1_x = 0.05
-        p2_x = W - 0.05
-        p1_y = 0.015 + metWidth * 0.5 - 0.01
+        p1_x = sd_mx
+        p2_x = W - sd_mx
+        p1_y = sd_my + metWidth * 0.5 - via_enc
         p2_y = p1_y
         for _j in range(1, cnt_rows + 1):
             _metal_cont(
@@ -461,10 +470,10 @@ def _rf_mos_core(
                 p2_y + y_offset,
                 layer_metal1,
                 layer_cont,
-                metWidth - 0.02,
+                metWidth - sd_adj,
                 contW,
                 contW,
-                0.05,
+                sd_mx,
                 contS,
                 shift_x=ox,
                 shift_y=oy,
@@ -478,46 +487,46 @@ def _rf_mos_core(
                     p2_y + y_offset,
                     layer_metal2,
                     layer_via1,
-                    viaW + 0.01,
+                    viaW + via_enc,
                     viaW,
                     viaW,
-                    0.05,
+                    sd_mx,
                     viaS,
                     shift_x=ox,
                     shift_y=oy,
                 )
-            p1_y = p1_y + metWidth - 0.02 + 0.13
+            p1_y = p1_y + metWidth - sd_adj + sd_row_sp
             p2_y = p1_y
 
     # -- Source pin --
     _add_rect(
         c,
         layer_metal1_pin,
-        ox + 0.05,
-        oy + 0.015,
-        ox + (W - 0.05),
-        oy + (ec - 0.05 - dce),
+        ox + sd_mx,
+        oy + sd_my,
+        ox + (W - sd_mx),
+        oy + (ec - sd_mx - dce),
     )
 
     # -- Drain pin --
     _add_rect(
         c,
         layer_metal1_pin,
-        ox + 0.05,
-        oy + (0.015 + y_step),
-        ox + (W - 0.05),
-        oy + (ec - 0.05 + y_step - dce),
+        ox + sd_mx,
+        oy + (sd_my + y_step),
+        ox + (W - sd_mx),
+        oy + (ec - sd_mx + y_step - dce),
     )
 
     # Save port locations for S and D
-    src_pin_x1 = ox + 0.05
-    src_pin_y1 = oy + 0.015
-    src_pin_x2 = ox + (W - 0.05)
-    src_pin_y2 = oy + (ec - 0.05 - dce)
-    drn_pin_x1 = ox + 0.05
-    drn_pin_y1 = oy + (0.015 + y_step)
-    drn_pin_x2 = ox + (W - 0.05)
-    drn_pin_y2 = oy + (ec - 0.05 + y_step - dce)
+    src_pin_x1 = ox + sd_mx
+    src_pin_y1 = oy + sd_my
+    src_pin_x2 = ox + (W - sd_mx)
+    src_pin_y2 = oy + (ec - sd_mx - dce)
+    drn_pin_x1 = ox + sd_mx
+    drn_pin_y1 = oy + (sd_my + y_step)
+    drn_pin_x2 = ox + (W - sd_mx)
+    drn_pin_y2 = oy + (ec - sd_mx + y_step - dce)
 
     # -- Gate ring --
     if gat_ring:
@@ -556,7 +565,9 @@ def _rf_mos_core(
         )
 
     # -- Gate poly-metal1 contacts --
-    u_cont = u + 0.02
+    gc_offset = TECH.rf_gate_cont_offset
+    u_cont = u + gc_offset
+    gat_pin_hw = TECH.rf_gate_pin_half_width
     # Left side
     p1_x = -dgatx - wgat * 0.5
     p1_y_gc = u_cont
@@ -570,18 +581,18 @@ def _rf_mos_core(
         p2_y_gc,
         layer_metal1,
         layer_cont,
-        viaW + 0.01,
+        viaW + via_enc,
         contW,
         contW,
-        0.05,
+        sd_mx,
         viaS,
         shift_x=ox,
         shift_y=oy,
     )
     # Gate pin on left side
-    gat_pin_x1 = ox + (p1_x - 0.1)
+    gat_pin_x1 = ox + (p1_x - gat_pin_hw)
     gat_pin_y1 = oy + p1_y_gc
-    gat_pin_x2 = ox + (p2_x + 0.1)
+    gat_pin_x2 = ox + (p2_x + gat_pin_hw)
     gat_pin_y2 = oy + p2_y_gc
     _add_rect(c, layer_metal1_pin, gat_pin_x1, gat_pin_y1, gat_pin_x2, gat_pin_y2)
 
@@ -596,10 +607,10 @@ def _rf_mos_core(
         p2_y_gc,
         layer_metal1,
         layer_cont,
-        viaW + 0.01,
+        viaW + via_enc,
         contW,
         contW,
-        0.05,
+        sd_mx,
         viaS,
         shift_x=ox,
         shift_y=oy,
@@ -607,6 +618,8 @@ def _rf_mos_core(
 
     # -- Guard ring --
     # Guard ring: Activ ring + Metal1 contacts
+    gr_off_h = TECH.rf_guard_cont_offset_h
+    gr_off_v = TECH.rf_guard_cont_offset_v
     if guard_ring != "No":
         # Bottom horizontal contact row
         p1_x_gr = xl
@@ -624,7 +637,7 @@ def _rf_mos_core(
             met1_w1,
             contW,
             contW,
-            0.08,
+            gr_off_h,
             contS,
             shift_x=ox,
             shift_y=oy,
@@ -650,7 +663,7 @@ def _rf_mos_core(
             met1_w1,
             contW,
             contW,
-            0.08,
+            gr_off_h,
             contS,
             shift_x=ox,
             shift_y=oy,
@@ -673,7 +686,7 @@ def _rf_mos_core(
             met1_w1,
             contW,
             contW,
-            0.11,
+            gr_off_v,
             contS,
             shift_x=ox,
             shift_y=oy,
@@ -696,7 +709,7 @@ def _rf_mos_core(
             met1_w1,
             contW,
             contW,
-            0.11,
+            gr_off_v,
             contS,
             shift_x=ox,
             shift_y=oy,
@@ -768,19 +781,19 @@ def _rf_mos_core(
         _add_rect(
             c,
             layer_psd,
-            ox + (xl + 0.5),
-            oy + (yb + 0.6),
-            ox + (xr - 0.5),
-            oy + (yt - 0.6),
+            ox + (xl + TECH.rf_psd_pmos_inset_x),
+            oy + (yb + TECH.rf_psd_pmos_inset_y),
+            ox + (xr - TECH.rf_psd_pmos_inset_x),
+            oy + (yt - TECH.rf_psd_pmos_inset_y),
         )
         cur_xl, cur_xr, cur_yb, cur_yt = xl, xr, yb, yt
 
     # -- ThickGateOx for HV --
     if is_hv:
         if rfnmos:
-            d = 0.35
+            d = TECH.rf_tgo_nmos
         else:
-            d = 0.31
+            d = TECH.rf_tgo_pmos
         cur_xl = cur_xl - d
         cur_xr = cur_xr + d
         cur_yb = cur_yb - d
@@ -797,9 +810,9 @@ def _rf_mos_core(
     # -- NWell for rfpmos --
     if not rfnmos:
         if is_hv:
-            d = 0.35
+            d = TECH.rf_nw_pmos_hv
         else:
-            d = 0.31
+            d = TECH.rf_nw_pmos_lv
         cur_xl = cur_xl - d
         cur_xr = cur_xr + d
         cur_yb = cur_yb - d

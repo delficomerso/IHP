@@ -718,6 +718,71 @@ class TechIHP(BaseModel):
     inductor_min_spacing: float = 2.1
     inductor_min_diameter: float = 15.0
 
+    # Design rules - FET layout
+    epsilon: float = 0.001
+    cont_gate_dist: float = 0.11  # Cnt_f
+    gatpoly_activ_over: float = 0.18  # Gat_c
+    gat_d: float = 0.07  # Gat_d
+    psd_activ_over: float = 0.18  # pSD_c
+    psd_gate_over_lv: float = 0.3  # pSD_i
+    psd_gate_over_hv: float = 0.4  # pSD_i1
+    nw_activ_over_lv: float = 0.31  # NW_c
+    nw_activ_over_hv: float = 0.62  # NW_c1
+    tgo_activ: float = 0.27  # TGO_a
+    tgo_gatpoly: float = 0.34  # TGO_c
+    m1_over: float = 0.0  # M1_c
+    m1_endcap: float = 0.05  # M1_c1
+
+    # Design rules - RF layout (vias)
+    via1_size_rf: float = 0.19  # V1_a
+    via1_spacing_narrow: float = 0.22  # V1_b
+    via1_spacing_wide: float = 0.29  # V1_b1
+    via1_width_threshold: float = 1.52  # W threshold for via spacing switch
+    via1_enc: float = 0.01  # V1_c
+    via1_endcap: float = 0.05  # V1_c1
+
+    # Design rules - RF layout (rings and spacings)
+    rf_gate_ring_width: float = 0.3
+    rf_guard_ring_width: float = 0.32
+    rf_guard_ring_m1_width: float = 0.32
+    rf_psd_ring_width: float = 0.38
+    rf_sd_metal_width_over: float = 0.14  # metWidth = cont_size + this
+
+    rf_active_gate_dist_x: float = 0.13  # dgatx (cnt_rows <= 2)
+    rf_active_gate_dist_x_wide: float = 0.17  # dgatx (cnt_rows > 2)
+    rf_active_gate_dist_y: float = 0.235  # dgaty
+    rf_gate_guard_dist: float = 0.36  # dguard
+
+    rf_channel_dist_base: float = 0.38  # dc scaling base
+    rf_channel_dist_step: float = 0.03  # dc scaling step
+    rf_endpiece_base: float = 0.345  # ec scaling base
+    rf_endpiece_step: float = 0.065  # ec scaling step
+    rf_short_wide_adjust: float = 0.005  # dce
+    rf_short_wide_l_threshold: float = 0.14
+    rf_short_wide_w_threshold: float = 1.0
+
+    # Design rules - RF layout (contacts and offsets)
+    rf_sd_margin_x: float = 0.05
+    rf_sd_margin_y: float = 0.015
+    rf_sd_metal_adjust: float = 0.02
+    rf_sd_row_spacing: float = 0.13
+    rf_gate_cont_offset: float = 0.02  # u_cont = u + this
+    rf_gate_cont_margin_single: float = 0.075  # u when cnt_rows == 1
+    rf_gate_cont_margin_multi: float = 0.36  # u when cnt_rows > 1
+
+    rf_guard_cont_offset_h: float = 0.08
+    rf_guard_cont_offset_v: float = 0.11
+
+    rf_psd_pmos_inset_x: float = 0.5
+    rf_psd_pmos_inset_y: float = 0.6
+
+    rf_tgo_nmos: float = 0.35  # ThickGateOx extension (NMOS HV)
+    rf_tgo_pmos: float = 0.31  # ThickGateOx extension (PMOS HV)
+    rf_nw_pmos_hv: float = 0.35  # NWell extension (PMOS HV)
+    rf_nw_pmos_lv: float = 0.31  # NWell extension (PMOS LV)
+
+    rf_gate_pin_half_width: float = 0.1
+
 
 TECH = TechIHP()
 LAYER_STACK = get_layer_stack()
