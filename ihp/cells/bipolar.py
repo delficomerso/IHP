@@ -18,6 +18,7 @@ def npn13G2(
     layer_nsd: LayerSpec = "nSDdrawing",
     layer_cont: LayerSpec = "Contdrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
+    layer_metal1_pin: LayerSpec = "Metal1pin",
     layer_trans: LayerSpec = "TRANSdrawing",
 ) -> Component:
     """Create an NPN13G2 bipolar transistor.
@@ -237,7 +238,7 @@ def npn13G2(
         center=(0, 0),
         width=em_width,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -246,7 +247,7 @@ def npn13G2(
         center=(0, base_width / 2),
         width=cont_size,
         orientation=90,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -255,7 +256,7 @@ def npn13G2(
         center=(collector_length / 2, 0),
         width=cont_size,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -392,6 +393,7 @@ def pnpMPA(
     layer_nsd: LayerSpec = "nSDdrawing",
     layer_cont: LayerSpec = "Contdrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
+    layer_metal1_pin: LayerSpec = "Metal1pin",
     layer_trans: LayerSpec = "TRANSdrawing",
 ) -> Component:
     """Create a PNP MPA bipolar transistor.
@@ -556,7 +558,7 @@ def pnpMPA(
         center=(0, 0),
         width=em_width,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -565,7 +567,7 @@ def pnpMPA(
         center=(0, base_width / 2),
         width=cont_size,
         orientation=90,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -574,7 +576,7 @@ def pnpMPA(
         center=(collector_length / 2, 0),
         width=cont_size,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 

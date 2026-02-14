@@ -247,10 +247,18 @@ def cmom(
     pin_layer = pins[metal_layer.capitalize()]
     label_layer = labels[metal_layer.capitalize()]
     c.add_port(
-        "PLUS", center=(top_pad_ref.x, top_pad_ref.y), width=min_width, layer=pin_layer
+        "PLUS",
+        center=(top_pad_ref.x, top_pad_ref.y),
+        width=min_width,
+        layer=pin_layer,
+        port_type="electrical",
     )
     c.add_port(
-        "MINUS", center=(bot_pad_ref.x, bot_pad_ref.y), width=min_width, layer=pin_layer
+        "MINUS",
+        center=(bot_pad_ref.x, bot_pad_ref.y),
+        width=min_width,
+        layer=pin_layer,
+        port_type="electrical",
     )
 
     c.add_label(text="PLUS", position=(top_pad_ref.x, top_pad_ref.y), layer=label_layer)
@@ -452,7 +460,7 @@ def cmim(
         center=(bot.xmin + mim_drc["m5_min_width"] / 2, bot.y),
         width=mim_drc["m5_min_width"],
         orientation=180,
-        layer=layer_metal5label,
+        layer=layer_metal5pin,
         port_type="electrical",
     )
 
@@ -461,7 +469,7 @@ def cmim(
         center=(top.xmax - mim_drc["topmetal1_width"] / 2, top.y),
         width=mim_drc["topmetal1_width"],
         orientation=0,
-        layer=layer_topmetal1label,
+        layer=layer_topmetal1pin,
         port_type="electrical",
     )
 
@@ -685,7 +693,7 @@ def rfcmim(
         center=(tie_low_ref.x, tie_low_ref.y),
         width=pguardring_width,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1pin,
         port_type="electrical",
     )
     c.add_label(text="TIE_LOW", position=(tie.x, tie.y), layer=layer_metal1label)

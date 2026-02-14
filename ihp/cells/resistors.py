@@ -158,7 +158,7 @@ def rsil(
         center=(pad_center_x, pad_upper_center_y),
         width=metal_pad_dx,
         orientation=90,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -167,7 +167,7 @@ def rsil(
         center=(pad_center_x, pad_lower_center_y),
         width=metal_pad_dx,
         orientation=270,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -349,7 +349,7 @@ def rppd(
         center=(metal_pad_center_x, metal_pad_upper_center_y),
         width=metal_pad_dx,
         orientation=90,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -358,7 +358,7 @@ def rppd(
         center=(metal_pad_center_x, metal_pad_lower_center_y),
         width=metal_pad_dx,
         orientation=270,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -541,7 +541,7 @@ def rhigh(
         center=(metal_pad_center_x, metal_pad_upper_center_y),
         width=metal_pad_dx,
         orientation=90,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -550,7 +550,7 @@ def rhigh(
         center=(metal_pad_center_x, metal_pad_lower_center_y),
         width=metal_pad_dx,
         orientation=270,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 

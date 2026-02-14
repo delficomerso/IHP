@@ -26,6 +26,7 @@ def svaricap(
     layer_nsd: LayerSpec = "nSDdrawing",
     layer_cont: LayerSpec = "Contdrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
+    layer_metal1_pin: LayerSpec = "Metal1pin",
     layer_varicap: LayerSpec = "Varicapdrawing",
 ) -> Component:
     """Create a MOS varicap (variable capacitor).
@@ -161,7 +162,7 @@ def svaricap(
         center=(-length / 2 - 1.0, 0),
         width=nf * finger_pitch,
         orientation=180,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -170,7 +171,7 @@ def svaricap(
         center=(length / 2 + 1.0, 0),
         width=nf * finger_pitch,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -199,7 +200,9 @@ def esd_nmos(
     layer_nsd: LayerSpec = "nSDdrawing",
     layer_cont: LayerSpec = "Contdrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
+    layer_metal1_pin: LayerSpec = "Metal1pin",
     layer_metal2: LayerSpec = "Metal2drawing",
+    layer_metal2_pin: LayerSpec = "Metal2pin",
     layer_esd: LayerSpec = "Recogesd",
 ) -> Component:
     """Create an ESD protection NMOS device.
@@ -341,7 +344,7 @@ def esd_nmos(
         center=(0, gate_width / 2 + 1.5),
         width=nf * finger_pitch,
         orientation=90,
-        layer=layer_metal2,
+        layer=layer_metal2_pin,
         port_type="electrical",
     )
 
@@ -350,7 +353,7 @@ def esd_nmos(
         center=(0, -gate_width / 2),
         width=nf * finger_pitch,
         orientation=270,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -377,6 +380,7 @@ def ptap1(
     layer_psd: LayerSpec = "pSDdrawing",
     layer_cont: LayerSpec = "Contdrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
+    layer_metal1_pin: LayerSpec = "Metal1pin",
 ) -> Component:
     """Create a P+ substrate tap.
 
@@ -453,7 +457,7 @@ def ptap1(
         center=(0, 0),
         width=width,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 
@@ -492,6 +496,7 @@ def ntap1(
     layer_nsd: LayerSpec = "nSDdrawing",
     layer_cont: LayerSpec = "Contdrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
+    layer_metal1_pin: LayerSpec = "Metal1pin",
 ) -> Component:
     """Create an N+ substrate tap.
 
@@ -578,7 +583,7 @@ def ntap1(
         center=(0, 0),
         width=width,
         orientation=0,
-        layer=layer_metal1,
+        layer=layer_metal1_pin,
         port_type="electrical",
     )
 

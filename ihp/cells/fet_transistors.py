@@ -258,15 +258,9 @@ def _mos_core(
         cont_dist,
     )
 
-    # Pin sublayer selection: the live PyCell's MkPin() uses Layer("Metal1", "drawing")
-    # which means addPin() creates geometry on the drawing layer only for pmos.
-    # For nmos and HV variants, the PyCell DOES create pin sublayer geometry.
-    if is_pmos and not is_hv:
-        pin_layer_m1 = layer_metal1
-        pin_layer_poly = layer_gatpoly
-    else:
-        pin_layer_m1 = layer_metal1_pin
-        pin_layer_poly = layer_gatpoly_pin
+    # Pin sublayer for pin markers and ports.
+    pin_layer_m1 = layer_metal1_pin
+    pin_layer_poly = layer_gatpoly_pin
 
     # Source pin marker
     _add_rect(
@@ -480,28 +474,29 @@ def _mos_core(
     # GDSFactory ports for netlisting (S, D, G)
     # Port widths must be even multiples of dbu (0.002 um) per kfactory.
     # -----------------------------------------------------------------------
-    m1_layer = (8, 0)  # Metal1 drawing
-    poly_layer = (5, 0)  # GatPoly drawing
     c.add_port(
         name="S",
         center=(src_x, src_y),
         width=_even_dbu(port_height),
         orientation=180,
-        layer=m1_layer,
+        layer=layer_metal1_pin,
+        port_type="electrical",
     )
     c.add_port(
         name="D",
         center=(drain_x, drain_y),
         width=_even_dbu(port_height),
         orientation=0,
-        layer=m1_layer,
+        layer=layer_metal1_pin,
+        port_type="electrical",
     )
     c.add_port(
         name="G",
         center=(gate_x, gate_y),
         width=_even_dbu(gate_height),
         orientation=270,
-        layer=poly_layer,
+        layer=layer_gatpoly_pin,
+        port_type="electrical",
     )
 
     return c
