@@ -17,6 +17,21 @@ skip = {
     "dataclasses",
     "library",
     "waveguide_template",
+    # primitives.py — schematic-only VLSIR cells, no GDS geometry
+    "resistor",
+    "capacitor",
+    "inductor",
+    "mos",
+    "diode",
+    "bipolar",
+    "vsource",
+    "isource",
+    "vcvs",
+    "vccs",
+    "cccs",
+    "ccvs",
+    "tline",
+    "subckt",
 }
 
 skip_plot: tuple[str, ...] = ("",)

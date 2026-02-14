@@ -15,7 +15,8 @@ import pytest
 
 from ihp import PDK
 from ihp import cells2 as pycell
-from ihp.cells.transistors import nmos, nmos_hv, pmos, pmos_hv
+from ihp.cells.fet_transistors import nmos, nmos_hv, pmos, pmos_hv
+from ihp.cells.rf_transistors import rfnmos, rfnmos_hv, rfpmos, rfpmos_hv
 
 # -----------------------------------------------------------------------
 # Fixtures
@@ -189,6 +190,280 @@ def test_xor_nmosHV(width, length, ng):
 def test_xor_pmosHV(width, length, ng):
     ref = pycell.pmosHV(w=width, l=length, ng=ng)
     new = pmos_hv(width=width, length=length, nf=ng)
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# RF MOSFET test matrices
+# -----------------------------------------------------------------------
+
+# Geometric parameter sweep (default RF config)
+RFNMOS_PARAMS = list(
+    itertools.product(
+        [0.5, 1.0, 2.0],  # W
+        [0.13, 0.50, 0.72],  # L
+        [1, 2, 4],  # NG
+    )
+)
+
+RFPMOS_PARAMS = list(
+    itertools.product(
+        [0.5, 1.0, 2.0],
+        [0.13, 0.50, 0.72],
+        [1, 2, 4],
+    )
+)
+
+RFNMOSHV_PARAMS = list(
+    itertools.product(
+        [0.5, 1.0, 2.0],
+        [0.45, 0.70, 1.0],
+        [1, 2, 4],
+    )
+)
+
+RFPMOSHV_PARAMS = list(
+    itertools.product(
+        [0.5, 1.0, 2.0],
+        [0.40, 0.70, 1.0],
+        [1, 2, 4],
+    )
+)
+
+# RF-specific configuration sweep (fixed W=1.0, L=0.72, NG=1)
+RF_CONFIG_PARAMS = list(
+    itertools.product(
+        [1, 2],  # cnt_rows
+        ["Yes", "No"],  # Met2Cont
+        ["Yes", "No"],  # gat_ring
+        ["Yes", "No", "U", "Top+Bottom"],  # guard_ring
+    )
+)
+
+
+def _rf_param_id(val):
+    width, length, ng = val
+    return f"W{width}_L{length}_NG{ng}"
+
+
+def _rf_config_id(val):
+    cnt_rows, met2, gat, guard = val
+    return f"CR{cnt_rows}_M2{met2}_GR{gat}_GD{guard}"
+
+
+# -----------------------------------------------------------------------
+# rfnmos - geometric sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "width,length,ng",
+    RFNMOS_PARAMS,
+    ids=[_rf_param_id(p) for p in RFNMOS_PARAMS],
+)
+def test_xor_rfnmos(width, length, ng):
+    ref = pycell.rfnmos(w=width, l=length, ng=ng)
+    new = rfnmos(width=width, length=length, nf=ng)
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfnmos - RF config sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cnt_rows,met2_cont,gat_ring_val,guard_ring_val",
+    RF_CONFIG_PARAMS,
+    ids=[_rf_config_id(p) for p in RF_CONFIG_PARAMS],
+)
+def test_xor_rfnmos_config(cnt_rows, met2_cont, gat_ring_val, guard_ring_val):
+    ref = pycell.rfnmos(
+        w=1.0,
+        l=0.72,
+        ng=1,
+        cnt_rows=cnt_rows,
+        Met2Cont=met2_cont,
+        gat_ring=gat_ring_val,
+        guard_ring=guard_ring_val,
+    )
+    new = rfnmos(
+        width=1.0,
+        length=0.72,
+        nf=1,
+        cnt_rows=cnt_rows,
+        met2_cont=(met2_cont == "Yes"),
+        gat_ring=(gat_ring_val == "Yes"),
+        guard_ring=guard_ring_val,
+    )
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfpmos - geometric sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "width,length,ng",
+    RFPMOS_PARAMS,
+    ids=[_rf_param_id(p) for p in RFPMOS_PARAMS],
+)
+def test_xor_rfpmos(width, length, ng):
+    ref = pycell.rfpmos(w=width, l=length, ng=ng)
+    new = rfpmos(width=width, length=length, nf=ng)
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfpmos - RF config sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cnt_rows,met2_cont,gat_ring_val,guard_ring_val",
+    RF_CONFIG_PARAMS,
+    ids=[_rf_config_id(p) for p in RF_CONFIG_PARAMS],
+)
+def test_xor_rfpmos_config(cnt_rows, met2_cont, gat_ring_val, guard_ring_val):
+    ref = pycell.rfpmos(
+        w=1.0,
+        l=0.72,
+        ng=1,
+        cnt_rows=cnt_rows,
+        Met2Cont=met2_cont,
+        gat_ring=gat_ring_val,
+        guard_ring=guard_ring_val,
+    )
+    new = rfpmos(
+        width=1.0,
+        length=0.72,
+        nf=1,
+        cnt_rows=cnt_rows,
+        met2_cont=(met2_cont == "Yes"),
+        gat_ring=(gat_ring_val == "Yes"),
+        guard_ring=guard_ring_val,
+    )
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfnmosHV - geometric sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "width,length,ng",
+    RFNMOSHV_PARAMS,
+    ids=[_rf_param_id(p) for p in RFNMOSHV_PARAMS],
+)
+def test_xor_rfnmosHV(width, length, ng):
+    ref = pycell.rfnmosHV(w=width, l=length, ng=ng)
+    new = rfnmos_hv(width=width, length=length, nf=ng)
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfnmosHV - RF config sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cnt_rows,met2_cont,gat_ring_val,guard_ring_val",
+    RF_CONFIG_PARAMS,
+    ids=[_rf_config_id(p) for p in RF_CONFIG_PARAMS],
+)
+def test_xor_rfnmosHV_config(cnt_rows, met2_cont, gat_ring_val, guard_ring_val):
+    ref = pycell.rfnmosHV(
+        w=1.0,
+        l=0.72,
+        ng=1,
+        cnt_rows=cnt_rows,
+        Met2Cont=met2_cont,
+        gat_ring=gat_ring_val,
+        guard_ring=guard_ring_val,
+    )
+    new = rfnmos_hv(
+        width=1.0,
+        length=0.72,
+        nf=1,
+        cnt_rows=cnt_rows,
+        met2_cont=(met2_cont == "Yes"),
+        gat_ring=(gat_ring_val == "Yes"),
+        guard_ring=guard_ring_val,
+    )
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfpmosHV - geometric sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "width,length,ng",
+    RFPMOSHV_PARAMS,
+    ids=[_rf_param_id(p) for p in RFPMOSHV_PARAMS],
+)
+def test_xor_rfpmosHV(width, length, ng):
+    ref = pycell.rfpmosHV(w=width, l=length, ng=ng)
+    new = rfpmos_hv(width=width, length=length, nf=ng)
+    failures = xor_cells(ref, new)
+    assert not failures, "\n".join(
+        f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()
+    )
+
+
+# -----------------------------------------------------------------------
+# rfpmosHV - RF config sweep
+# -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cnt_rows,met2_cont,gat_ring_val,guard_ring_val",
+    RF_CONFIG_PARAMS,
+    ids=[_rf_config_id(p) for p in RF_CONFIG_PARAMS],
+)
+def test_xor_rfpmosHV_config(cnt_rows, met2_cont, gat_ring_val, guard_ring_val):
+    ref = pycell.rfpmosHV(
+        w=1.0,
+        l=0.72,
+        ng=1,
+        cnt_rows=cnt_rows,
+        Met2Cont=met2_cont,
+        gat_ring=gat_ring_val,
+        guard_ring=guard_ring_val,
+    )
+    new = rfpmos_hv(
+        width=1.0,
+        length=0.72,
+        nf=1,
+        cnt_rows=cnt_rows,
+        met2_cont=(met2_cont == "Yes"),
+        gat_ring=(gat_ring_val == "Yes"),
+        guard_ring=guard_ring_val,
+    )
     failures = xor_cells(ref, new)
     assert not failures, "\n".join(
         f"  [{k[0]:3d}/{k[1]}] {v}" for k, v in failures.items()

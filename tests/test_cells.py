@@ -31,8 +31,8 @@ skip_test = {
     "import_gds",
     "nmos_hv",  # reference GDS not found
     "pmos_hv",  # reference GDS not found
-    "rfpmos",  # reference GDS not found
-    "rfnmos",  # reference GDS not found
+    "rfnmos_hv",  # reference GDS not yet generated
+    "rfpmos_hv",  # reference GDS not yet generated
     "subckt",  # requires mocking with model and ports
     "svaricap",
     "SVaricap",

@@ -1,0 +1,31 @@
+info:
+  vlsir:
+    model: sg13_lv_pmos
+    params:
+      l: 0.0
+      m: 1
+      ng: 1
+      rfmode: 1
+      w: 0.0
+    port_map:
+      D: d
+      G: g
+      S: s
+    port_order:
+    - d
+    - g
+    - s
+    - b
+    spice_lib: sg13g2_moslv_mod.lib
+    spice_type: SUBCKT
+name: rfpmos_W1_L0p13_N1_M1_CR1_MCTrue_GRTrue_GRYes_Msg13_lv_pmos
+settings:
+  cnt_rows: 1
+  gat_ring: true
+  guard_ring: 'Yes'
+  length: 0.13
+  m: 1
+  met2_cont: true
+  model: sg13_lv_pmos
+  nf: 1
+  width: 1
