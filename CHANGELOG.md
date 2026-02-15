@@ -1,7 +1,43 @@
 # [Changelog](https://keepachangelog.com/en/1.0.0/)
-## [Unreleased](https://github.com/gdsfactory/ihp/compare/v0.1.0...main)
+## [Unreleased](https://github.com/gdsfactory/ihp/compare/v0.2.0...main)
 
 <!-- towncrier release notes start -->
+
+## [0.2.0](https://github.com/gdsfactory/ihp/releases/tag/v0.2.0) - 2026-02-15
+
+### Deprecated
+
+- Fixed-GDS cells (`*_fixed`) are now deprecated in favour of the equivalent pure-Python parametric cells. They remain available but will be removed in a future release.
+
+### Added
+
+- Pure GDSFactory RF-MOSFETs (`nfet_rf`, `pfet_rf`) with full layout generation, split from the transistors module [#90](https://github.com/gdsfactory/ihp/pull/90)
+- `TechIHP` Pydantic model centralizing all FET + RF geometry design-rule constants [#90](https://github.com/gdsfactory/ihp/pull/90)
+- `cells2` PyCell reference page in documentation, documenting the CNI-ported reference implementations
+- Technology page (`docs/tech.rst`) documenting `ihp.tech`: layer map, layer stack, design rules, cross-sections, and routing strategies
+- 5 GHz up-converter mixer demo (`mixer5ghz`) added to documentation
+- Palace EM simulation notebooks added to docs [#80](https://github.com/gdsfactory/ihp/pull/80)
+- Scheme-to-YAML tools and source netlist converter [#87](https://github.com/gdsfactory/ihp/pull/87)
+- SPICE-to-YAML converter module with examples [#84](https://github.com/gdsfactory/ihp/pull/84)
+- 160 GHz LNA design example [#71](https://github.com/gdsfactory/ihp/pull/71)
+- Port overlap test [#94](https://github.com/gdsfactory/ihp/pull/94)
+- `make docs-clean` and `make docs-serve` targets for local doc previewing
+
+### Changed
+
+- Documentation restructured: "PDK Reference" section with separate pages for parametric cells, deprecated fixed cells, and cells2 reference
+- Documentation generation script now produces three RST pages instead of one
+
+### Fixed
+
+- Port layers now use pin sublayers with `port_type="electrical"` across all cells [#94](https://github.com/gdsfactory/ihp/pull/94)
+- Double `_fixed_fixed` naming bug on `cmim_fixed` and `inductor2_fixed`
+- MOSFET layout improved and fuzzed against PyCell reference [#88](https://github.com/gdsfactory/ihp/pull/88)
+- `import_gds` (`functools.partial`) no longer leaks into the cell catalog documentation
+
+### Removed
+
+- Obsolete `bipolar.py` and `transistors.py` shims
 
 ## [0.1.5](https://github.com/gdsfactory/ihp/releases/tag/v0.1.5) - 2026-01-24
 

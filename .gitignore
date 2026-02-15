@@ -1,5 +1,7 @@
 ihp-klayout/
 docs/cells.rst
+docs/cells_fixed.rst
+docs/cells2_reference.rst
 
 # Simulation outputs
 sim-data-*/

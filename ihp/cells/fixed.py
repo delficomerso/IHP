@@ -5,6 +5,8 @@ from functools import partial, wraps
 
 import gdsfactory as gf
 
+from ..config import PATH
+
 
 def deprecated(func):
     """Mark a fixed-GDS cell as deprecated."""
@@ -20,8 +22,6 @@ def deprecated(func):
 
     return wrapper
 
-
-from ..config import PATH
 
 _add_ports_metal1 = partial(
     gf.add_ports.add_ports_from_markers_inside, pin_layer=(8, 2), port_layer=(8, 0)
@@ -308,7 +308,7 @@ def chipText_fixed() -> gf.Component:
 
 @deprecated
 @gf.cell
-def cmim_fixed_fixed() -> gf.Component:
+def cmim_fixed() -> gf.Component:
     """Returns cmim fixed cell.
 
     .. plot::
@@ -540,7 +540,7 @@ def dummy1_fixed() -> gf.Component:
 
 @deprecated
 @gf.cell
-def inductor2_fixed_fixed() -> gf.Component:
+def inductor2_fixed() -> gf.Component:
     """Returns inductor2 fixed cell.
 
     .. plot::

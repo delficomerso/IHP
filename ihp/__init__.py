@@ -23,7 +23,7 @@ from .config import PATH
 
 components = cells
 
-__version__ = "0.1.7"
+__version__ = "0.2.0"
 __all__ = [
     "PATH",
     "components",
