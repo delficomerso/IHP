@@ -1,14 +1,22 @@
 import inspect
+import warnings
 
 from gdsfactory.get_factories import get_cells
 
 from ihp import PDK
 from ihp import cells2 as cells2_module
 from ihp.config import PATH
+from ihp.tech import LAYER_STACK, LAYER_VIEWS
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+PDK.activate()
 
 filepath_cells = PATH.repo / "docs" / "cells.rst"
 filepath_fixed = PATH.repo / "docs" / "cells_fixed.rst"
 filepath_cells2 = PATH.repo / "docs" / "cells2_reference.rst"
+filepath_3d = PATH.repo / "docs" / "_static" / "3d"
+filepath_3d.mkdir(parents=True, exist_ok=True)
 
 skip = {
     "LIBRARY",
@@ -47,8 +55,34 @@ skip_settings: tuple[str, ...] = ("flatten", "safe_cell_names")
 cells = PDK.cells
 
 
+def make_3d_glb(name, cell_dict):
+    """Export a cell's 3D scene as a binary GLB file.
+
+    Returns the filename relative to _static/3d/, or None on failure.
+    """
+    try:
+        cell_fn = cell_dict[name]
+        sig = inspect.signature(cell_fn)
+        params = {}
+        for p in sig.parameters:
+            default = sig.parameters[p].default
+            if (
+                isinstance(default, int | float | str | tuple)
+                and p not in skip_settings
+            ):
+                params[p] = default
+        c = cell_fn(**params)
+        scene = c.to_3d(layer_views=LAYER_VIEWS, layer_stack=LAYER_STACK)
+        filename = f"{name}.glb"
+        scene.export(str(filepath_3d / filename))
+        return filename
+    except Exception as e:
+        print(f"  [3D skip] {name}: {e}")
+        return None
+
+
 def write_cell_entry(f, name, cell_dict, module_path="ihp.cells", import_alias="cells"):
-    """Write a single cell's RST entry (autofunction + plot)."""
+    """Write a single cell's RST entry (autofunction + plot + 3D viewer)."""
     sig = inspect.signature(cell_dict[name])
     kwargs = ", ".join(
         [
@@ -95,6 +129,18 @@ def write_cell_entry(f, name, cell_dict, module_path="ihp.cells", import_alias="
 
 """
         )
+
+        # Generate 3D GLB and embed via shared viewer
+        glb_file = make_3d_glb(name, cell_dict)
+        if glb_file:
+            f.write(
+                f"""
+.. raw:: html
+
+   <iframe src="_static/3d/viewer.html?file={glb_file}" width="100%" height="500px" frameborder="0" loading="lazy"></iframe>
+
+"""
+            )
 
 
 # Write parametric cells page
