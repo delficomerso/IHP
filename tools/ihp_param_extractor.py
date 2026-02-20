@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import ast
 from pathlib import Path
-
+import ast
 import yaml
 
 IHPPYCELL_DIR = Path("ihp/cells2/ihp_pycell")  # folder with pycell classes
-
 
 def extract_sch_param_descriptions(py_file: Path):
     """Return {class_name: {sch_arg: description}}"""
@@ -19,10 +17,7 @@ def extract_sch_param_descriptions(py_file: Path):
             class_name = node.name
             param_map[class_name] = {}
             for item in node.body:
-                if (
-                    isinstance(item, ast.FunctionDef)
-                    and item.name == "defineParamSpecs"
-                ):
+                if isinstance(item, ast.FunctionDef) and item.name == "defineParamSpecs":
                     for stmt in ast.walk(item):
                         if isinstance(stmt, ast.Call):
                             if getattr(stmt.func, "id", None) == "specs":
@@ -33,13 +28,11 @@ def extract_sch_param_descriptions(py_file: Path):
                                 # get description (third argument)
                                 description = (
                                     stmt.args[2].value
-                                    if len(stmt.args) >= 3
-                                    and isinstance(stmt.args[2], ast.Constant)
+                                    if len(stmt.args) >= 3 and isinstance(stmt.args[2], ast.Constant)
                                     else None
                                 )
                                 param_map[class_name][sch_arg] = description
     return param_map
-
 
 # -------------------------------------------------------------------
 # Main

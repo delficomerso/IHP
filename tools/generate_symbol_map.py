@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-import ast
-import re
 from pathlib import Path
-
+import ast
 import yaml
+import re 
 
 # -------------------------------------------------------------------
 # Folders inside IHP/ihp
 # -------------------------------------------------------------------
 HIP_DIR = Path("ihp")
 CELLS_FOLDERS = ["cells", "cells2"]  # folders to scan for gf.cell functions
-PYCELL_FOLDER = HIP_DIR / "cells2" / "ihp_pycell"  # folder with pycell classes
-EXCLUDE_FILES = {"__init__.py", "fixed.py", "ihp_pycell"}  # files to ignore
-
+PYCELL_FOLDER = HIP_DIR / "cells2" / "ihp_pycell" # folder with pycell classes
+EXCLUDE_FILES = {"__init__.py", "fixed.py","ihp_pycell"}  # files to ignore
 
 # -------------------------------------------------------------------
 # Helpers
@@ -20,7 +18,6 @@ EXCLUDE_FILES = {"__init__.py", "fixed.py", "ihp_pycell"}  # files to ignore
 def normalize(name: str) -> str:
     """Normalize CamelCase and snake_case to comparable lowercase string."""
     return re.sub(r"_", "", name).lower()
-
 
 def get_classes_from_file(py_file: Path):
     """Extract class names inheriting from DloGen."""
@@ -34,7 +31,6 @@ def get_classes_from_file(py_file: Path):
                     classes.append(node.name)
     return classes
 
-
 def get_cells_from_file(py_file: Path):
     """Return a list of gf.cell function names in a Python file."""
     cells = []
@@ -45,16 +41,12 @@ def get_cells_from_file(py_file: Path):
             for decorator in node.decorator_list:
                 # @gf.cell
                 if isinstance(decorator, ast.Attribute):
-                    if (
-                        getattr(decorator.value, "id", "") == "gf"
-                        and decorator.attr == "cell"
-                    ):
+                    if getattr(decorator.value, "id", "") == "gf" and decorator.attr == "cell":
                         cells.append(node.name)
                 # @cell (if imported directly)
                 elif isinstance(decorator, ast.Name) and decorator.id == "cell":
                     cells.append(node.name)
     return cells
-
 
 # -------------------------------------------------------------------
 # Collect data
@@ -78,7 +70,6 @@ def collect_gf_cells():
             gf_cells.extend(get_cells_from_file(py_file))
     return gf_cells
 
-
 # -------------------------------------------------------------------
 # Generate symbol map
 # -------------------------------------------------------------------
@@ -87,9 +78,11 @@ def generate_symbol_map():
 
     pycell_classes = collect_pycell_classes()
     gf_cells = collect_gf_cells()
-
+    
     # Normalize gf cells into lookup dictionary
-    normalized_cells = {normalize(cell): cell for cell in gf_cells}
+    normalized_cells = {
+        normalize(cell): cell for cell in gf_cells
+    }
 
     for class_name in pycell_classes:
         norm_class = normalize(class_name)
@@ -101,7 +94,6 @@ def generate_symbol_map():
             print(f"No match found for {class_name}")
 
     return symbol_map
-
 
 # -------------------------------------------------------------------
 # Save to YAML for inspection

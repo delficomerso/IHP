@@ -1,0 +1,383 @@
+version: '1.0'
+pdk: IHP
+units: um
+materials:
+  si:
+    type: semiconductor
+    conductivity: 2.0
+    permittivity: 11.9
+    refractive_index: 3.47
+  TiN:
+    type: conductor
+    conductivity: 5000000.0
+  sin:
+    type: dielectric
+    permittivity: 7.5
+    loss_tangent: 0.001
+    refractive_index: 2.0
+  poly_si:
+    type: conductor
+    conductivity: 100000.0
+  sio2:
+    type: dielectric
+    permittivity: 4.1
+    loss_tangent: 0.0
+    refractive_index: 1.44
+  aluminum:
+    type: conductor
+    conductivity: 37700000.0
+  tungsten:
+    type: conductor
+    conductivity: 18200000.0
+  air:
+    type: dielectric
+    permittivity: 1.0
+    loss_tangent: 0.0
+    refractive_index: 1.0
+  SiO2:
+    type: dielectric
+    permittivity: 4.1
+    loss_tangent: 0.0
+    refractive_index: 1.44
+  silicon:
+    type: semiconductor
+    conductivity: 2.0
+    permittivity: 11.9
+    refractive_index: 3.47
+  passive:
+    type: dielectric
+    permittivity: 6.6
+    loss_tangent: 0.0
+layers:
+  pwell:
+    gds_layer:
+    - 46
+    - 0
+    zmin: -1.32
+    zmax: 0.18
+    thickness: 1.5
+    material: si
+    type: dielectric
+    mesh_resolution: medium
+  nwell:
+    gds_layer:
+    - 31
+    - 0
+    zmin: -1.3
+    zmax: 0.2
+    thickness: 1.5
+    material: si
+    type: dielectric
+    mesh_resolution: medium
+  active:
+    gds_layer:
+    - 1
+    - 0
+    zmin: 0.0
+    zmax: 0.201
+    thickness: 0.201
+    material: si
+    type: conductor
+    mesh_resolution: medium
+  nsd:
+    gds_layer:
+    - 7
+    - 0
+    zmin: 0.0
+    zmax: 0.2
+    thickness: 0.2
+    material: si
+    type: dielectric
+    mesh_resolution: medium
+  psd:
+    gds_layer:
+    - 14
+    - 0
+    zmin: 0.0
+    zmax: 0.199
+    thickness: 0.199
+    material: si
+    type: dielectric
+    mesh_resolution: medium
+  salblock:
+    gds_layer:
+    - 28
+    - 0
+    zmin: 0.2
+    zmax: 0.22
+    thickness: 0.02
+    material: sin
+    type: dielectric
+    mesh_resolution: medium
+  thickgateox:
+    gds_layer:
+    - 44
+    - 0
+    zmin: 0.2
+    zmax: 0.2073
+    thickness: 0.0073
+    material: sio2
+    type: dielectric
+    mesh_resolution: medium
+  poly:
+    gds_layer:
+    - 5
+    - 0
+    zmin: 0.2
+    zmax: 0.36
+    thickness: 0.16
+    material: poly_si
+    type: conductor
+    mesh_resolution: medium
+  polyres:
+    gds_layer:
+    - 128
+    - 0
+    zmin: 0.2
+    zmax: 0.36
+    thickness: 0.16
+    material: poly_si
+    type: conductor
+    mesh_resolution: medium
+  extblock:
+    gds_layer:
+    - 111
+    - 0
+    zmin: 0.36
+    zmax: 0.38
+    thickness: 0.02
+    material: sin
+    type: dielectric
+    mesh_resolution: medium
+  emwind:
+    gds_layer:
+    - 33
+    - 0
+    zmin: 0.36
+    zmax: 0.39
+    thickness: 0.03
+    material: poly_si
+    type: conductor
+    mesh_resolution: medium
+  emwihv:
+    gds_layer:
+    - 156
+    - 0
+    zmin: 0.36
+    zmax: 0.39
+    thickness: 0.03
+    material: poly_si
+    type: conductor
+    mesh_resolution: medium
+  heattrans:
+    gds_layer:
+    - 51
+    - 0
+    zmin: 0.36
+    zmax: 0.41
+    thickness: 0.05
+    material: TiN
+    type: conductor
+    mesh_resolution: medium
+  heatres:
+    gds_layer:
+    - 52
+    - 0
+    zmin: 0.36
+    zmax: 0.41
+    thickness: 0.05
+    material: TiN
+    type: conductor
+    mesh_resolution: medium
+  cont:
+    gds_layer:
+    - 6
+    - 0
+    zmin: 0.2
+    zmax: 0.84
+    thickness: 0.64
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  metal1:
+    gds_layer:
+    - 8
+    - 0
+    zmin: 0.84
+    zmax: 1.26
+    thickness: 0.42
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  via1:
+    gds_layer:
+    - 19
+    - 0
+    zmin: 1.26
+    zmax: 1.8
+    thickness: 0.54
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  metal2:
+    gds_layer:
+    - 10
+    - 0
+    zmin: 1.8
+    zmax: 2.29
+    thickness: 0.49
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  via2:
+    gds_layer:
+    - 29
+    - 0
+    zmin: 2.29
+    zmax: 2.83
+    thickness: 0.54
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  metal3:
+    gds_layer:
+    - 30
+    - 0
+    zmin: 2.83
+    zmax: 3.32
+    thickness: 0.49
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  via3:
+    gds_layer:
+    - 49
+    - 0
+    zmin: 3.32
+    zmax: 3.86
+    thickness: 0.54
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  metal4:
+    gds_layer:
+    - 50
+    - 0
+    zmin: 3.86
+    zmax: 4.35
+    thickness: 0.49
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  via4:
+    gds_layer:
+    - 66
+    - 0
+    zmin: 4.35
+    zmax: 4.89
+    thickness: 0.54
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  metal5:
+    gds_layer:
+    - 67
+    - 0
+    zmin: 4.89
+    zmax: 5.38
+    thickness: 0.49
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  mim:
+    gds_layer:
+    - 36
+    - 0
+    zmin: 5.38
+    zmax: 5.57
+    thickness: 0.19
+    material: sio2
+    type: dielectric
+    mesh_resolution: medium
+  vmim:
+    gds_layer:
+    - 129
+    - 0
+    zmin: 5.58
+    zmax: 6.24
+    thickness: 0.66
+    material: tungsten
+    type: conductor
+    mesh_resolution: medium
+  topvia1:
+    gds_layer:
+    - 125
+    - 0
+    zmin: 5.38
+    zmax: 6.23
+    thickness: 0.85
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  topmetal1:
+    gds_layer:
+    - 126
+    - 0
+    zmin: 6.23
+    zmax: 8.23
+    thickness: 2.0
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  topvia2:
+    gds_layer:
+    - 133
+    - 0
+    zmin: 8.23
+    zmax: 11.03
+    thickness: 2.8
+    material: tungsten
+    type: via
+    mesh_resolution: medium
+  topmetal2:
+    gds_layer:
+    - 134
+    - 0
+    zmin: 11.03
+    zmax: 14.03
+    thickness: 3.0
+    material: aluminum
+    type: conductor
+    mesh_resolution: medium
+  passiv:
+    gds_layer:
+    - 9
+    - 0
+    zmin: 14.03
+    zmax: 15.93
+    thickness: 1.9
+    material: sin
+    type: dielectric
+    mesh_resolution: medium
+dielectrics:
+- name: substrate
+  zmin: -2.0
+  zmax: 0.0
+  material: silicon
+- name: oxide
+  zmin: 0.0
+  zmax: 15.930000000000001
+  material: SiO2
+- name: passive
+  zmin: 15.930000000000001
+  zmax: 16.330000000000002
+  material: passive
+- name: air_box
+  zmin: 16.330000000000002
+  zmax: 416.33
+  material: air
+simulation:
+  boundary_margin: 30.0
+  air_above: 400.0
+  substrate_thickness: 2.0
+  include_substrate: true

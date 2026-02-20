@@ -2,10 +2,10 @@
 
 import re
 import sys
-from collections import defaultdict
-from pathlib import Path
-
 import yaml
+import subprocess
+from pathlib import Path
+from collections import defaultdict
 
 # -------------------------------------------------------------------
 # Constants
@@ -47,7 +47,6 @@ PROPERTY_RE = re.compile(r"(\w+)\s*=\s*([^\s]+)")
 # Helpers
 # -------------------------------------------------------------------
 
-
 def parse_value(value: str):
     """Convert SPICE-style units to microns when numeric."""
     units = {"u": 1.0, "n": 1e-3, "p": 1e-6, "m": 1e6}
@@ -65,21 +64,17 @@ def parse_value(value: str):
     except ValueError:
         return value
 
-
 def clean_number(value, ndigits=4):
-    if isinstance(value, int | float):
+    if isinstance(value, (int, float)):
         return round(value, ndigits)
     return value
-
 
 def extract_component_name(symbol: str) -> str:
     return symbol.split("/")[-1].replace(".sym", "")
 
-
 # -------------------------------------------------------------------
 # Parse Xschem schematic
 # -------------------------------------------------------------------
-
 
 def parse_xschem_sch(filepath: Path):
     text = filepath.read_text()
@@ -113,8 +108,7 @@ def parse_xschem_sch(filepath: Path):
         component = extract_component_name(symbol)
         settings = {
             k: clean_number(parse_value(v))
-            for k, v in properties.items()
-            if k != "name"
+            for k, v in properties.items() if k != "name"
         }
 
         instances[name] = {"component": component}
@@ -130,11 +124,9 @@ def parse_xschem_sch(filepath: Path):
 
     return instances, placements, top_ports
 
-
 # -------------------------------------------------------------------
 # Parse SPICE netlist to map nets to instance pins
 # -------------------------------------------------------------------
-
 
 def parse_spice_netlist(filepath: Path):
     net_to_pins = defaultdict(list)
@@ -156,16 +148,16 @@ def parse_spice_netlist(filepath: Path):
 
         # Map net → instance,pin (p1, p2, ...)
         for idx, net in enumerate(nets):
-            pin_name = f"p{idx + 1}"
+            pin_name = f"p{idx+1}"
             net_to_pins[net].append(f"{name},{pin_name}")
 
     return spice_instances, net_to_pins
 
 
+
 # -------------------------------------------------------------------
 # Map top-level ports to instance pins
 # -------------------------------------------------------------------
-
 
 # -------------------------------------------------------------------
 # Map top-level ports to instance pins and external connections
@@ -174,24 +166,22 @@ def parse_spice_netlist(filepath: Path):
 def map_ports_to_instances(top_ports, net_to_pins):
     ports = {}
     connections = {}
-    for _net, pins in net_to_pins.items():
+    for net, pins in net_to_pins.items():
         if len(pins) > 1:
             # connect first pin to others
             first = pins[0]
             for other in pins[1:]:
                 connections[first] = other
 
-    for port_label, _coords in top_ports.items():
+    for port_label, coords in top_ports.items():
         if port_label in net_to_pins:
             ports[port_label] = net_to_pins[port_label][0]  # pick one instance pin
 
     return ports, connections
 
-
 # -------------------------------------------------------------------
 # Generate routes from net_to_pins
 # -------------------------------------------------------------------
-
 
 def generate_routes(net_to_pins):
     routes = {}
@@ -202,24 +192,20 @@ def generate_routes(net_to_pins):
             first_pin = pins[0]
             routes[route_name] = {
                 "links": {
-                    first_pin: pins[
-                        1
-                    ]  # connect first pin to second pin; extendable if more
+                    first_pin: pins[1]  # connect first pin to second pin; extendable if more
                 },
                 # NOTE: The `settings` section must be filled manually by the user.
                 "settings": {
                     "cross_section": "strip",  # placeholder
-                    "width": 1.0,  # placeholder
+                    "width": 1.0,              # placeholder
                     # add other waveguide or route parameters manually
                 },
             }
     return routes
 
-
 # -------------------------------------------------------------------
 # Writer
 # -------------------------------------------------------------------
-
 
 def write_yaml(data, outfile: Path):
     with open(outfile, "w") as f:
@@ -235,7 +221,9 @@ def write_yaml(data, outfile: Path):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or len(sys.argv) > 3:
-        raise SystemExit("Usage: generate_yaml.py <schematic.sch> [<netlist.spice>]")
+        raise SystemExit(
+            "Usage: generate_yaml.py <schematic.sch> [<netlist.spice>]"
+        )
 
     sch_file = Path(sys.argv[1]).resolve()
     if not sch_file.exists():
@@ -276,3 +264,7 @@ if __name__ == "__main__":
     out_file = sch_file.with_suffix(".pic.yml")
     write_yaml(data, out_file)
     print(f"Wrote {out_file}")
+
+
+
+
