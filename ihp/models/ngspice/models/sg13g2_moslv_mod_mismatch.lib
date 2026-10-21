@@ -75,7 +75,7 @@
     .if (as <= 1e-50)
         .if (floor(floor(ng/2+0.501)*2+0.001) != ng)
             Nsg13_lv_nmos d g s b sg13g2_lv_nmos_psp
-              + w='agauss(w, sg13g2_lv_nmos_dw_mm, (mm_ok != 1 ? 0 : 1))' 
+              + w='agauss(w, sg13g2_lv_nmos_dw_mm, (mm_ok != 1 ? 0 : 1))'
               + l='agauss(l, sg13g2_lv_nmos_dl_mm, (mm_ok != 1 ? 0 : 1))'
               + nf='ng' mult='m'
               + as='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)'
@@ -114,7 +114,7 @@
     .if (as <= 1e-50)
         .if (floor(floor(ng/2+0.501)*2+0.001) != ng)
             Nsg13_lv_nmos d g s b sg13g2_lv_nmos_psp_rf
-              + w='agauss(w, sg13g2_lv_nmos_dw_mm, (mm_ok != 1 ? 0 : 1))' 
+              + w='agauss(w, sg13g2_lv_nmos_dw_mm, (mm_ok != 1 ? 0 : 1))'
               + l='agauss(l, sg13g2_lv_nmos_dl_mm, (mm_ok != 1 ? 0 : 1))'
               + nf='ng' mult='m'
               + as='max(w/ng,wmin)*(z1+((ng-1)/2)*z2)'

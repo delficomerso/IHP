@@ -3,13 +3,13 @@
 import math
 
 import gdsfactory as gf
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
 
-from cni.tech import Tech
 from ihp.tech import TECH as _TECH
 
-tech_name = "SG13_dev"
-tech = Tech.get("SG13_dev").getTechParams()
+_XS = "metal1_routing"
 
 
 def fix(value):
@@ -33,7 +33,68 @@ def _snap_width_to_grid(width_um: float) -> float:
     return round(w / grid) * grid
 
 
-@gf.cell
+def npn13G2_schematic(
+    baspolyx: float = 0.3,
+    bipwinx: float = 0.07,
+    bipwiny: float = 0.1,
+    empolyx: float = 0.15,
+    empolyy: float = 0.18,
+    STI: float = 0.44,
+    emitter_length: float = 0.9,
+    emitter_width: float = 0.7,
+    Nx: int = 1,
+    Ny: int = 1,
+    text: str = "npn13G2",
+    CMetY1: float = 0,
+    CMetY2: float = 0,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "BN", "side": "top", "type": "electric"},
+        {"name": "E", "side": "bottom", "type": "electric"},
+        {"name": "B", "side": "left", "type": "electric"},
+        {"name": "C", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "npn13G2",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E", "BN"],
+            "params": {
+                "Nx": "Nx",
+                "Ny": "Ny",
+                "we": "emitter_width * 1e-6",
+                "le": "emitter_length * 1e-6",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "npn13G2",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E", "BN"],
+            "params": {
+                "Nx": "Nx",
+                "Ny": "Ny",
+                "we": "emitter_width * 1e-6",
+                "le": "emitter_length * 1e-6",
+            },
+        },
+    ]
+    s.create_port(name="C", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="B", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="E", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=0, y=1, orientation=90)
+    return s
+
+
+@gf.cell(schematic_function=npn13G2_schematic, tags=["IHP", "bjt", "npn"])
 def npn13G2(
     baspolyx: float = 0.3,
     bipwinx: float = 0.07,
@@ -603,64 +664,11 @@ def npn13G2(
             layer=layer_activ,
         )
 
-        if Nx > 1:
-            left = -0.89 - le / 2
-            bottom = 0.57 + we / 2 - leoffset - bipwinyoffset - empolyyoffset
-            right = stretchX + 0.89 + le / 2
-            top = 1.01 + we / 2 - leoffset - bipwinyoffset - empolyyoffset
-            c.add_ref(
-                gf.components.rectangle(
-                    size=(
-                        right - left,
-                        top - bottom,
-                    ),
-                    layer=layer_metal1_pin,
-                )
-            ).move((left, bottom))
-            c.add_label(
-                text="C",
-                layer=layer_text,
-                position=(
-                    0.5 * (left + right),
-                    0.5 * (top + bottom),
-                ),
-            )
-        else:
-            left = -0.89 - le / 2
-            bottom = 0.56 + we / 2 + leoffset + bipwinyoffset + empolyyoffset
-            right = stretchX + 0.89 + le / 2
-            top = 0.8 + we / 2 + leoffset + bipwinyoffset + empolyyoffset
-            c.add_ref(
-                gf.components.rectangle(
-                    size=(
-                        right - left,
-                        top - bottom,
-                    ),
-                    layer=layer_metal1_pin,
-                )
-            ).move((left, bottom))
-            c.add_label(
-                text="C",
-                layer=layer_text,
-                position=(
-                    0.5 * (left + right),
-                    0.5 * (top + bottom),
-                ),
-            )
-        # Collector port
-        c.add_port(
-            "C",
-            center=(0.5 * (left + right), 0.5 * (top + bottom)),
-            width=_snap_width_to_grid(top - bottom),
-            layer=layer_metal1_pin,
-            orientation=180.0,
-            port_type="electrical",
-        )
-
-        left = -0.94 - le / 2
-        bottom = -0.81 - we / 2 - leoffset - bipwinyoffset - empolyyoffset
-        right = stretchX + 0.94 + le / 2
-        top = -0.57 - we / 2 - leoffset - bipwinyoffset - empolyyoffset
+    if Nx > 1:
+        left = -0.89 - le / 2
+        bottom = 0.57 + we / 2 - leoffset - bipwinyoffset - empolyyoffset
+        right = stretchX + 0.89 + le / 2
+        top = 1.01 + we / 2 - leoffset - bipwinyoffset - empolyyoffset
         c.add_ref(
             gf.components.rectangle(
                 size=(
@@ -671,80 +679,164 @@ def npn13G2(
             )
         ).move((left, bottom))
         c.add_label(
-            text="B",
+            text="C",
             layer=layer_text,
             position=(
                 0.5 * (left + right),
                 0.5 * (top + bottom),
             ),
         )
-
-        # Base port
-        c.add_port(
-            "B",
-            center=(0.5 * (left + right), 0.5 * (top + bottom)),
-            width=_snap_width_to_grid(top - bottom),
-            layer=layer_metal1_pin,
-            orientation=180.0,
-            port_type="electrical",
-        )
-
-        left = -0.71 - le / 2
-        bottom = -0.335 - we / 2 - leoffset - bipwinyoffset - empolyyoffset
-        right = stretchX + 0.71 + le / 2
-        top = 0.32 + we / 2 + leoffset + bipwinyoffset + empolyyoffset
+    else:
+        left = -0.89 - le / 2
+        bottom = 0.56 + we / 2 + leoffset + bipwinyoffset + empolyyoffset
+        right = stretchX + 0.89 + le / 2
+        top = 0.8 + we / 2 + leoffset + bipwinyoffset + empolyyoffset
         c.add_ref(
             gf.components.rectangle(
                 size=(
                     right - left,
                     top - bottom,
                 ),
-                layer=layer_metal2_pin,
+                layer=layer_metal1_pin,
             )
         ).move((left, bottom))
         c.add_label(
-            text="E",
+            text="C",
             layer=layer_text,
             position=(
                 0.5 * (left + right),
                 0.5 * (top + bottom),
             ),
         )
+    # Collector port
+    c.add_port(
+        "C",
+        center=(0.5 * (left + right), 0.5 * (top + bottom)),
+        width=_snap_width_to_grid(top - bottom),
+        layer=layer_metal1_pin,
+        orientation=180.0,
+        port_type="electrical",
+    )
 
-        pcLabelText = f"Ae={int(Nx):d}*{int(Ny):d}*{le:.2f}*{we:.2f}"
-        c.add_label(text=pcLabelText, layer=layer_text, position=(-1.977, -2.546))
-
-        # Emitter port
-        c.add_port(
-            "E",
-            center=(0.5 * (left + right), 0.5 * (top + bottom)),
-            width=_snap_width_to_grid(top - bottom),
-            layer=layer_metal2_pin,
-            orientation=180.0,
-            port_type="electrical",
+    left = -0.94 - le / 2
+    bottom = -0.81 - we / 2 - leoffset - bipwinyoffset - empolyyoffset
+    right = stretchX + 0.94 + le / 2
+    top = -0.57 - we / 2 - leoffset - bipwinyoffset - empolyyoffset
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                right - left,
+                top - bottom,
+            ),
+            layer=layer_metal1_pin,
         )
+    ).move((left, bottom))
+    c.add_label(
+        text="B",
+        layer=layer_text,
+        position=(
+            0.5 * (left + right),
+            0.5 * (top + bottom),
+        ),
+    )
 
-        # VLSIR Simulation Metadata
-        c.info["vlsir"] = {
-            "model": "npn13G2",
-            "spice_type": "SUBCKT",
-            "spice_lib": "sg13g2_hbt_mod.lib",
-            "port_order": ["c", "b", "e", "bn"],
-            "port_map": {"C": "c", "B": "b", "E": "e"},
-            "params": {
-                "Nx": Nx,
-                "Ny": Ny,
-                "we": emitter_width * 1e-6,
-                "le": emitter_length * 1e-6,
-            },
-        }
+    # Base port
+    c.add_port(
+        "B",
+        center=(0.5 * (left + right), 0.5 * (top + bottom)),
+        width=_snap_width_to_grid(top - bottom),
+        layer=layer_metal1_pin,
+        orientation=180.0,
+        port_type="electrical",
+    )
 
-        # TODO: Extend to handle empoly, bipwin, cmet
+    left = -0.71 - le / 2
+    bottom = -0.335 - we / 2 - leoffset - bipwinyoffset - empolyyoffset
+    right = stretchX + 0.71 + le / 2
+    top = 0.32 + we / 2 + leoffset + bipwinyoffset + empolyyoffset
+    c.add_ref(
+        gf.components.rectangle(
+            size=(
+                right - left,
+                top - bottom,
+            ),
+            layer=layer_metal2_pin,
+        )
+    ).move((left, bottom))
+    c.add_label(
+        text="E",
+        layer=layer_text,
+        position=(
+            0.5 * (left + right),
+            0.5 * (top + bottom),
+        ),
+    )
 
+    pcLabelText = f"Ae={int(Nx):d}*{int(Ny):d}*{le:.2f}*{we:.2f}"
+    c.add_label(text=pcLabelText, layer=layer_text, position=(-1.977, -2.546))
+
+    # Emitter port
+    c.add_port(
+        "E",
+        center=(0.5 * (left + right), 0.5 * (top + bottom)),
+        width=_snap_width_to_grid(top - bottom),
+        layer=layer_metal2_pin,
+        orientation=180.0,
+        port_type="electrical",
+    )
+
+    add_electrical_pins(c, port_pin_mapping={"C": ["C"], "B": ["B"], "E": ["E"]})
     return c
 
 
-@gf.cell
+def npn13G2L_schematic(
+    emitter_length: float = 1,
+    emitter_width: float = 0.07,
+    Nx: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "BN", "side": "top", "type": "electric"},
+        {"name": "E", "side": "bottom", "type": "electric"},
+        {"name": "B", "side": "left", "type": "electric"},
+        {"name": "C", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "npn13G2l",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E", "BN"],
+            "params": {
+                "we": "emitter_width * 1e-6",
+                "le": "emitter_length * 1e-6",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "npn13G2l",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E", "BN"],
+            "params": {
+                "we": "emitter_width * 1e-6",
+                "le": "emitter_length * 1e-6",
+            },
+        },
+    ]
+    s.create_port(name="C", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="B", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="E", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=0, y=1, orientation=90)
+    return s
+
+
+@gf.cell(schematic_function=npn13G2L_schematic, tags=["IHP", "bjt", "npn"])
 def npn13G2L(
     emitter_length: float = 1,
     emitter_width: float = 0.07,
@@ -1299,23 +1391,58 @@ def npn13G2L(
         ),
     )
 
-    # VLSIR Simulation Metadata
-    c.info["vlsir"] = {
-        "model": "npn13G2l",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_hbt_mod.lib",
-        "port_order": ["c", "b", "e", "bn"],
-        "port_map": {"C": "c", "B": "b", "E": "e"},
-        "params": {
-            "we": emitter_width * 1e-6,
-            "le": emitter_length * 1e-6,
-        },
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"C": ["C"], "B": ["B"], "E": ["E"]})
     return c
 
 
-@gf.cell
+def npn13G2V_schematic(
+    emitter_length: float = 1,
+    emitter_width: float = 0.12,
+    Nx: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "BN", "side": "top", "type": "electric"},
+        {"name": "E", "side": "bottom", "type": "electric"},
+        {"name": "B", "side": "left", "type": "electric"},
+        {"name": "C", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "npn13G2v",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E", "BN"],
+            "params": {
+                "we": "emitter_width * 1e-6",
+                "le": "emitter_length * 1e-6",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "npn13G2v",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E", "BN"],
+            "params": {
+                "we": "emitter_width * 1e-6",
+                "le": "emitter_length * 1e-6",
+            },
+        },
+    ]
+    s.create_port(name="C", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="B", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="E", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=0, y=1, orientation=90)
+    return s
+
+
+@gf.cell(schematic_function=npn13G2V_schematic, tags=["IHP", "bjt", "npn"])
 def npn13G2V(
     emitter_length: float = 1,
     emitter_width: float = 0.12,
@@ -1373,9 +1500,9 @@ def npn13G2V(
     Emi_Metal1_enc_vert = 0.28
     Emi_Metal1_enc_hori = 0.07
 
-    Via1Width = tech["V1_a"]
-    Via1Space = tech["V1_b"]
-    m1EncVia1 = tech["V1_c"]
+    Via1Width = _TECH.via1_size_rf
+    Via1Space = _TECH.via1_spacing_narrow
+    m1EncVia1 = _TECH.via1_enc
 
     column_pitch = 2.34
 
@@ -1891,19 +2018,7 @@ def npn13G2V(
         ),
     )
 
-    # VLSIR Simulation Metadata
-    c.info["vlsir"] = {
-        "model": "npn13G2v",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_hbt_mod.lib",
-        "port_order": ["c", "b", "e", "bn"],
-        "port_map": {"C": "c", "B": "b", "E": "e"},
-        "params": {
-            "we": emitter_width * 1e-6,
-            "le": emitter_length * 1e-6,
-        },
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"C": ["C"], "B": ["B"], "E": ["E"]})
     return c
 
 
@@ -1937,6 +2052,8 @@ def contactArray(
             Length (x-dimension) of the region which contains the pin array.
         width : float
             Width (y-dimension) of the region which contains the pin array.
+        contactLayer: LayerSpec
+            Layer on which the contacts are placed.
         xl: float
             Minimum x-coordinate of the array that contains the pins.
         yl: float
@@ -1951,7 +2068,7 @@ def contactArray(
             Distance between first column from left edge, last column from right edge, first (bottom) row and bottom edge, and last (top) row and top edge.
 
     """
-    eps = tech["epsilon1"]
+    eps = _TECH.epsilon
 
     nx = math.floor((length - ox * 2 + ds) / (ws + ds) + eps)
 
@@ -1996,7 +2113,43 @@ def contactArray(
         x = x + ws + dsx
 
 
-@gf.cell
+def pnpMPA_schematic(length: float = 2, width: float = 0.7) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "pnp"
+    s.info["ports"] = [
+        {"name": "E", "side": "bottom", "type": "electric"},
+        {"name": "B", "side": "left", "type": "electric"},
+        {"name": "C", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "pnpMPA",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E"],
+            "params": {},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "pnpMPA",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerHBT.lib",
+            "sections": ["hbt_typ", "hbt_bcs", "hbt_wcs"],
+            "port_order": ["C", "B", "E"],
+            "params": {},
+        },
+    ]
+    s.create_port(name="C", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="B", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="E", cross_section=_XS, x=0, y=-1, orientation=270)
+    return s
+
+
+@gf.cell(schematic_function=pnpMPA_schematic, tags=["IHP", "bjt", "pnp"])
 def pnpMPA(length: float = 2, width: float = 0.7) -> gf.Component:
     """Returns the IHP pnpMPA BJT transistor as a gdsfactory Component.
 
@@ -2024,18 +2177,18 @@ def pnpMPA(length: float = 2, width: float = 0.7) -> gf.Component:
 
     c = gf.Component()
 
-    SG13_GRID = tech["grid"]
+    SG13_GRID = _TECH.grid
     SG13_IGRID = 1.0 / SG13_GRID
-    epsilon = tech["epsilon1"]
+    epsilon = _TECH.epsilon
 
     hact = (fix(length * SG13_IGRID + epsilon) * SG13_GRID) * 0.5
     wact = (fix(width * SG13_IGRID + epsilon) * SG13_GRID) * 0.5
 
-    Cnt_a = tech["Cnt_a"]
-    Cnt_b = tech["Cnt_b"]
-    Cnt_b1 = tech["Cnt_b1"]
-    M1_c1 = tech["M1_c1"]
-    pSD_c = tech["pSD_c"]
+    Cnt_a = _TECH.cont_size
+    Cnt_b = _TECH.cont_spacing
+    Cnt_b1 = _TECH.cont_b1
+    M1_c1 = _TECH.m1_endcap
+    pSD_c = _TECH.psd_activ_over
 
     w1m1 = wact - 0.02
     h1m1 = hact - 0.02
@@ -2450,39 +2603,7 @@ def pnpMPA(length: float = 2, width: float = 0.7) -> gf.Component:
         port_type="electrical",
     )
 
-    c.info["vlsir"] = {
-        "model": "pnpMPA",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_hbt_mod.lib",
-        "port_order": ["c", "b", "e"],
-        "port_map": {"MINUS": "c", "TIE": "b", "PLUS": "e"},
-    }
-
+    add_electrical_pins(
+        c, port_pin_mapping={"TIE": ["TIE"], "PLUS": ["PLUS"], "MINUS": ["MINUS"]}
+    )
     return c
-
-
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK, cells2
-
-    PDK.activate()
-    # c0 = cells2.npn13G2()
-    # c1 = npn13G2()
-    # c = xor(c0, c1)
-    # c.show()
-
-    # c0 = cells2.npn13G2L(Nx=2)
-    # c1 = npn13G2L(Nx=2)
-    # c = xor(c0, c1)
-    # c.show()
-
-    # c0 = cells2.npn13G2V(Nx=3)
-    # c1 = npn13G2V(Nx=3)
-    # c = xor(c0, c1)
-    # c.show()
-
-    c0 = cells2.pnpMPA()
-    c1 = pnpMPA()
-    c = xor(c0, c1)
-    c.show()

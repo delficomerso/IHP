@@ -1,20 +1,66 @@
 """Passive components (varicaps, ESD, taps, seal rings) for IHP PDK."""
 
-from typing import Literal, TypeAlias
+from typing import Literal
 
 import gdsfactory as gf
 import numpy as np
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
 from numpy import floor, round
 
 from ihp import cells, tech
 
-FloatLike: TypeAlias = np.float32 | np.float64 | float
-Point: TypeAlias = tuple[FloatLike, FloatLike]
+_XS = "metal1_routing"
+
+type FloatLike = np.float32 | np.float64 | float
+type Point = tuple[FloatLike, FloatLike]
 
 
-@gf.cell
+def svaricap_schematic(
+    width: float = 1.0,
+    length: float = 1.0,
+    nf: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "varicap"
+    s.info["ports"] = [
+        {"name": "BN", "side": "top", "type": "electric"},
+        {"name": "G2", "side": "bottom", "type": "electric"},
+        {"name": "G1", "side": "left", "type": "electric"},
+        {"name": "W", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_hv_svaricap",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["G1", "W", "G2", "BN"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "Nx": "nf"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_hv_svaricap",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["G1", "W", "G2", "BN"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "Nx": "nf"},
+        },
+    ]
+    s.create_port(name="G1", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="W", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="G2", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=0, y=1, orientation=90)
+    return s
+
+
+@gf.cell(schematic_function=svaricap_schematic, tags=["IHP", "varicap", "hv"])
 def svaricap(
     width: float = 1.0,
     length: float = 1.0,
@@ -175,20 +221,48 @@ def svaricap(
         port_type="electrical",
     )
 
-    # Add VLSIR metadata
-    c.info["vlsir"] = {
-        "model": model,
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_svaricaphv_mod.lib",
-        "port_order": ["G1", "W", "G2", "bn"],
-        "port_map": {},
-        "params": {"w": width * 1e-6, "l": length * 1e-6, "Nx": nf},
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"G": ["G"], "B": ["B"]})
     return c
 
 
-@gf.cell
+def esd_nmos_schematic(
+    width: float = 50.0,
+    length: float = 0.5,
+    nf: int = 10,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "VDD", "side": "top", "type": "electric"},
+        {"name": "VSS", "side": "bottom", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "nmoscl_2",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["VDD", "VSS"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "nmoscl_2",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["VDD", "VSS"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf"},
+        },
+    ]
+    s.create_port(name="VDD", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="VSS", cross_section=_XS, x=0, y=-1, orientation=270)
+    return s
+
+
+@gf.cell(schematic_function=esd_nmos_schematic, tags=["IHP", "esd", "lv"])
 def esd_nmos(
     width: float = 50.0,
     length: float = 0.5,
@@ -357,20 +431,50 @@ def esd_nmos(
         port_type="electrical",
     )
 
-    # Add VLSIR metadata
-    c.info["vlsir"] = {
-        "model": model,
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moslv_mod.lib",
-        "port_order": ["VDD", "VSS"],
-        "port_map": {},
-        "params": {"w": width * 1e-6, "l": length * 1e-6, "ng": nf},
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"PAD": ["PAD"], "GND": ["GND"]})
     return c
 
 
-@gf.cell
+def ptap1_schematic(
+    width: float = 1.0,
+    length: float = 1.0,
+    rows: int = 1,
+    cols: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "tap"
+    s.info["ports"] = [
+        {"name": "P1", "side": "top", "type": "electric"},
+        {"name": "P2", "side": "bottom", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "ptap1",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["1", "2"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "ptap1",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["1", "2"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6"},
+        },
+    ]
+    s.create_port(name="P1", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="P2", cross_section=_XS, x=0, y=-1, orientation=270)
+    return s
+
+
+@gf.cell(schematic_function=ptap1_schematic, tags=["IHP", "tap", "p-type"])
 def ptap1(
     width: float = 1.0,
     length: float = 1.0,
@@ -480,24 +584,50 @@ def ptap1(
     c.info["rows"] = rows
     c.info["cols"] = cols
 
-    # Add VLSIR metadata
-    c.info["vlsir"] = {
-        "model": "ptap1",
-        "spice_type": "SUBCKT",
-        "spice_lib": "resistors_mod.lib",
-        "port_order": ["1", "2"],
-        "port_map": {},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-        },
-        # TODO: Translate "rows, cols"
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"TAP": ["TAP"]})
     return c
 
 
-@gf.cell
+def ntap1_schematic(
+    width: float = 1.0,
+    length: float = 1.0,
+    rows: int = 1,
+    cols: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "tap"
+    s.info["ports"] = [
+        {"name": "P1", "side": "top", "type": "electric"},
+        {"name": "P2", "side": "bottom", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "ntap1",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["1", "2"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "ntap1",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["1", "2"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6"},
+        },
+    ]
+    s.create_port(name="P1", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="P2", cross_section=_XS, x=0, y=-1, orientation=270)
+    return s
+
+
+@gf.cell(schematic_function=ntap1_schematic, tags=["IHP", "tap", "n-type"])
 def ntap1(
     width: float = 1.0,
     length: float = 1.0,
@@ -618,24 +748,11 @@ def ntap1(
     c.info["rows"] = rows
     c.info["cols"] = cols
 
-    # Add VLSIR metadata
-    c.info["vlsir"] = {
-        "model": "ntap1",
-        "spice_type": "SUBCKT",
-        "spice_lib": "resistors_mod.lib",
-        "port_order": ["1", "2"],
-        "port_map": {},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-        },
-        # TODO: Translate "rows, cols"
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"TAP": ["TAP"]})
     return c
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "sealring"])
 def sealring(
     width: float = 200.0,
     height: float = 200.0,
@@ -815,15 +932,16 @@ def sealring(
     c.info["height"] = height
     c.info["ring_width"] = ring_width
 
+    add_electrical_pins(c, port_pin_mapping={})
     return c
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "guardring"])
 def guard_ring(
     width: float = 0.5,
     guardRingSpacing: float = 0.14,
     guardRingType: Literal["psub", "nwell"] = "psub",
-    bbox: tuple[Point, Point] | None = None,
+    bbox: tuple[Point, Point] | None = ((-5, -5), (5, 5)),
     path: list[tuple[Point, Point]] | None = None,
     layer_activ: LayerSpec = "Activdrawing",
     layer_cont: LayerSpec = "Contdrawing",
@@ -1005,35 +1123,5 @@ def guard_ring(
     c.info["rows"] = nrows
     c.info["guardRingSpacing"] = guardRingSpacing
 
+    add_electrical_pins(c, port_pin_mapping={})
     return c
-
-
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK
-    from ihp.cells import fixed
-
-    PDK.activate()
-
-    # Test the components
-    # c0 = cells.svaricap()  # original
-    # c1 = svaricap()  # New
-    # # c = gf.grid([c0, c1], spacing=100)
-    # c = xor(c0, c1)
-    # c.show()
-
-    # c0 = cells.esd_nmos()  # original
-    # c1 = esd_nmos()  # New
-    # c = xor(c0, c1)
-    # c.show()
-
-    c0 = fixed.ptap1()  # original
-    c1 = ptap1()  # New
-    c = xor(c0, c1)
-    c.show()
-
-    # c0 = fixed.sealring()  # original
-    # c1 = sealring()  # New
-    # c = xor(c0, c1)
-    # c.show()

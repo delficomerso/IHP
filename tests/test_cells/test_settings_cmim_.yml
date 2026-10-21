@@ -3,18 +3,27 @@ info:
   capacitance_fF: 55.142
   length: 6
   model: cmim
-  vlsir:
-    model: cap_cmim
-    params:
-      l: 0.0
-      w: 0.0
-    port_order:
-    - PLUS
-    - MINUS
-    spice_lib: capacitors_mod.lib
-    spice_type: SUBCKT
   width: 6
-name: cmim_W6_L6_LMMetal5drawing_LMMIMdrawing_LVVmimdrawing_L_8b51f9e9
+name: cmim_W6_L6_LMMetal5drawing_LMMIMdrawing_LVVmimdrawing_L_97c9d037
+ports:
+  MINUS:
+    center:
+    - -3.86
+    - 0
+    layer: Metal5pin
+    name: MINUS
+    orientation: 180
+    port_type: electrical
+    width: 0.2
+  PLUS:
+    center:
+    - 2.5
+    - 0
+    layer: TopMetal1pin
+    name: PLUS
+    orientation: 0
+    port_type: electrical
+    width: 1
 settings:
   layer_cap_mark: MemCapdrawing
   layer_m4nofill: Metal4nofill
@@ -31,5 +40,6 @@ settings:
   layer_topmetal1pin: TopMetal1pin
   layer_vmim: Vmimdrawing
   length: 6
+  m: 1
   model: cmim
   width: 6

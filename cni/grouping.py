@@ -21,8 +21,8 @@ from __future__ import annotations
 import pya
 
 from cni.box import Box
-from cni.tech import Tech
 from cni.physicalComponent import *
+from cni.tech import Tech
 
 
 class Grouping(PhysicalComponent):

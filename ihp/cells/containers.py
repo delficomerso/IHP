@@ -11,19 +11,21 @@ from gdsfactory.typings import (
     Strs,
 )
 
+from .bondpads import CuPillarPad
 
-@gf.cell
+__all__ = ["add_pads_top", "pack_doe", "pack_doe_grid"]
+
+
+@gf.cell(tags=["IHP", "container"])
 def add_pads_top(
     component: ComponentSpec = "straight",
     port_names: Strs | None = None,
-    component_name: str | None = None,
     cross_section: CrossSectionSpec = "metal_routing",
     pad_port_name: str = "e1",
-    pad: ComponentSpec = "CuPillarPad_fixed",
+    pad: ComponentSpec = CuPillarPad,
     bend: ComponentSpec = "wire_corner",
     straight_separation: float = 15.0,
     pad_pitch: float = 100.0,
-    taper: ComponentSpec | None = None,
     port_type: str = "electrical",
     allow_width_mismatch: bool = True,
     fanout_length: float | None = 80,
@@ -35,23 +37,20 @@ def add_pads_top(
     Args:
         component: component spec to connect to.
         port_names: list of port names to connect to pads.
-        component_name: optional for the label.
         cross_section: cross_section function.
         pad_port_name: pad port name.
         pad: pad function.
         bend: bend function.
         straight_separation: from edge to edge.
         pad_pitch: spacing between pads.
-        taper: taper function.
         port_type: port type.
         allow_width_mismatch: if True, allows width mismatch.
         fanout_length: length of the fanout.
         route_width: width of the route.
         kwargs: additional arguments.
 
-    .. plot::
-        :include-source:
-
+    Example:
+        ```python
         import gdsfactory as gf
         c = gf.c.nxn(
             xsize=600,
@@ -64,19 +63,18 @@ def add_pads_top(
         )
         cc = gf.routing.add_pads_top(component=c, port_names=("e1", "e4"), fanout_length=50)
         cc.plot()
+        ```
 
     """
     return gf.routing.add_pads_top(
         component=component,
         port_names=port_names,
-        component_name=component_name,
         cross_section=cross_section,
         pad_port_name=pad_port_name,
         pad=pad,
         bend=bend,
         straight_separation=straight_separation,
         pad_pitch=pad_pitch,
-        taper=taper,
         port_type=port_type,
         allow_width_mismatch=allow_width_mismatch,
         fanout_length=fanout_length,
@@ -85,7 +83,7 @@ def add_pads_top(
     )
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "container"])
 def pack_doe(
     doe: ComponentSpec,
     settings: dict[str, tuple[Any, ...]],
@@ -128,7 +126,7 @@ def pack_doe(
     )
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "container"])
 def pack_doe_grid(
     doe: ComponentSpec,
     settings: dict[str, tuple[Any, ...]],
@@ -170,11 +168,3 @@ def pack_doe_grid(
         with_text=with_text,
         **kwargs,
     )
-
-
-if __name__ == "__main__":
-    from ihp import PDK
-
-    PDK.activate()
-    c = add_pads_top()
-    c.show()

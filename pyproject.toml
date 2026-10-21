@@ -1,30 +1,37 @@
-# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
-
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools", "wheel", "ruff"]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[dependency-groups]
+dev = [
+  "pre-commit>=4.6.0",
+  "pylint>=4.0.8",
+  "ruff>=0.16.7",
+  "towncrier>=25.8.0"
+]
+docs = []
 
 [project]
-authors = [{name = "gdsfactory", email = "contact@gdsfactory.com"}]
+authors = [{ name = "gdsfactory", email = "contact@gdsfactory.com" }]
 classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
-  "gdsfactory~=9.34.0",
-  "gplugins[sax]~=2.0.0",
-  "doroutes>=0.2.0",
-  "vlsir>=7.0.0",
-  "vlsirtools>=7.0.0"
+  "gdsfactory~=9.51.0",
+  "gplugins[sax]~=2.1.0",
+  "pdk-schema~=0.3.0",
+  "scikit-rf>=1.0.0",
+  "gdsfactoryplus"
 ]
 description = "IHP pdk"
-keywords = ["python"]
-license = {file = "LICENSE"}
+keywords = ["bicmos", "eda", "gdsfactory", "ihp", "pdk", "python", "sg13g2"]
+license = { file = "LICENSE" }
 name = "ihp-gdsfactory"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"
-version = "0.2.0"
+requires-python = ">=3.12,<3.13"
+version = "2.0.1"
 
 [project.optional-dependencies]
 dev = [
@@ -35,18 +42,45 @@ dev = [
   "pytest-github-actions-annotate-failures",
   "pre-commit"
 ]
-docs = ["autodoc_pydantic", "jupytext", "jupyter-book==1.0.3"]
-simulation = ["gsim; python_version>='3.12'"]
+docs = [
+  "jupyter",
+  "kwasm",
+  "mkdocs-material",
+  "mkdocs-with-pdf",
+  "nbconvert",
+  "mkdocstrings[python]>=0.27.0",
+  "zensical>=0.0.40,<0.1.0"
+]
+simulation = [
+  "gsim~=0.7; python_version>='3.12'"
+]
 
 [tool.codespell]
-ignore-words-list = "te,fpr,nd,donot,schem,contnet,Contnet,rady,inout,INOUT"
-skip = "*.lock,*.svg,*.gds,*.oas,*.lib"
+ignore-words-list = "te,fpr,nd,donot,schem,contnet,Contnet,rady,inout,INOUT,nam,coul,calles,wether,rsource,orginal,delT"
+skip = "*.lock,*.svg,*.gds,*.oas,*.lib,ihp/models/ngspice/va/*"
 
 [tool.gdsfactoryplus]
+ignore = ["refs/*.py"]
 name = "ihp"
+
+[tool.gdsfactoryplus.livewire]
+schematic_scale = 0.1
 
 [tool.gdsfactoryplus.pdk]
 name = "ihp"
+
+[tool.gdsfactoryplus.sim.x]
+max = 15  # 15GHz
+min = 1  # 1GHz
+name = "f"
+num = 4001
+
+[tool.hatch.build.targets.wheel]
+exclude = ["ihp/refs"]
+packages = ["ihp", "cni"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"ihp-gdsfactory--sample-projects" = "ihp-gdsfactory--sample-projects"
 
 [tool.mypy]
 python_version = "3.12"
@@ -72,8 +106,9 @@ python_files = ["tests/*.py"]
 testpaths = ["tests"]
 
 [tool.ruff]
-exclude = ["cni"]
+exclude = ["cni/", "ihp/refs/"]
 fix = true
+force-exclude = true
 
 [tool.ruff.lint]
 ignore = [
@@ -95,20 +130,18 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "ihp/cells/__init__.py" = ["F403"]  # allowing star imports to aggregate cells
-"ihp/cells2/*.py" = ["F403", "F405", "E741"]  # allowing star imports and common variable names
-"ihp/cells2/ihp_pycell/*.py" = ["B007", "B018", "B904", "E402", "E711", "E721", "E722", "E741", "F811", "F821", "F841", "UP008", "UP031"]  # legacy code patterns
-"ihp/cells2/ihp_pycell/__init__.py" = ["F401"]  # explicit re-exports
 "ihp/models/__init__.py" = ["F403"]  # allowing star imports to aggregate cells
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.package-data]
-"*" = ["*.csv", "*.yaml", "*.yml", "*.gds", "*.lyp", "*.oas", "*.lyt", "*.dat", "*.nc", "*.svg", '*.GDS', "*.json", "*.txt"]
+"*" = ["*.csv", "*.yaml", "*.yml", "*.gds", "*.lyp", "*.oas", "*.lyt", "*.dat", "*.nc", "*.svg", '*.GDS', "*.json", "*.txt", "*.lib", "*.va", "*.include", "*.h"]
 
 [tool.setuptools.packages.find]
+exclude = ["ihp.refs", "ihp.refs.*"]
 include = ["ihp", "ihp.*", "cni", "cni.*"]
-where = [".", "ihp", "cni"]
+where = ["."]
 
 [tool.tbump]
 
@@ -125,9 +158,6 @@ cmd = "grep -q -F {new_version} CHANGELOG.md"
 name = "create & check changelog"
 
 [[tool.tbump.file]]
-src = "README.md"
-
-[[tool.tbump.file]]
 src = "pyproject.toml"
 
 [[tool.tbump.file]]
@@ -138,7 +168,7 @@ message_template = "Bump to {new_version}"
 tag_template = "v{new_version}"
 
 [tool.tbump.version]
-current = "0.2.0"
+current = "2.0.1"
 regex = '''
   (?P<major>\d+)
   \.

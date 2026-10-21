@@ -1,13 +1,13 @@
 *#######################################################################
 *
 * Copyright 2023 IHP PDK Authors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *    https://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 *distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +15,7 @@
 * limitations under the License.
 *
 *#######################################################################
-      
+
 * SPICE-Parameter HBT-Transistor (nom.)
 *
 * Model:                                VBIC (Rev.1.15)
@@ -30,14 +30,14 @@
 * Meas. Range forward output:           vce = (0.4 - 2.0)V
 * Nom. Temperature  (TNOM):             27 grd C
 * Meas. Temperature (TEMP):             27 grd C
-* Valid range for model                 
+* Valid range for model
 * ic: <(0.003*Nx) A  vbe :(0.65 - 0.96) V  vce :(0.4 - 2.0) V
 * Temp: -40°C - +125°C
 * Valid numbers: NX = 1 - 10
 * ________________________________________________________________________
 
 
-* a four terminal regular npn13G2 device 
+* a four terminal regular npn13G2 device
 .subckt npn13G2 c b e bn
 .param Nx=1 dtemp=0
 +Ny=1 le=0.96e-6 we=0.12e-6
@@ -263,7 +263,7 @@ Rt t 0 R = 1e9
 * WAFER:                                02
 * CHIP Nr:                              3.3
 * Device:                               npn13g2l_VBIC_Q118
-* Emitter size (mask):                  Nx *(0.07 x El) µm^2 with Nx = 1 - 4, El = 1 - 2.5 
+* Emitter size (mask):                  Nx *(0.07 x El) µm^2 with Nx = 1 - 4, El = 1 - 2.5
 * Maximum collector-to-emitter voltage: 1.6
 * Measurement data:                     T356_EDJ802_W02_3.3
 * Meas. Range forward gummel:           vbe = (0.3 - 1.04)V
@@ -501,7 +501,7 @@ Rt t 0 R = 1e9
 * WAFER:                                02
 * CHIP Nr:                              3.3
 * Device:                               npn13g2v_VBIC_Q118
-* Emitter size (mask):                  Nx *(0.12 x El) µm^2 with Nx = 1 - 4, El = 1.0 - 5.0 
+* Emitter size (mask):                  Nx *(0.12 x El) µm^2 with Nx = 1 - 4, El = 1.0 - 5.0
 * Maximum collector-to-emitter voltage: 2.5
 * Measurement data:                     T356_EDJ802_W02_3.3
 * Meas. Range forward gummel:           vbe = (0.3 - 1.0)V
@@ -516,7 +516,7 @@ Rt t 0 R = 1e9
 * ________________________________________________________________________
 
 
-* a four terminal npn13G2v device model 
+* a four terminal npn13G2v device model
 .subckt npn13G2v c b e bn
 .param Nx=1 le=2.50e-6 dtemp=0
 +Ny=1 we=0.12e-6
@@ -624,7 +624,7 @@ Csub s1 bn C = '(1.70E-14-(2.00E-15*Nx))*(El/2.5)**0'
 Rt t 0 R = 1e9
 .ends npn13G2v
 
-* a five terminal npn13G2v device model 
+* a five terminal npn13G2v device model
 .subckt npn13G2v_5t c b e bn t
 .param Nx=1 le=2.50e-6 dtemp=0
 +Ny=1 we=0.12e-6

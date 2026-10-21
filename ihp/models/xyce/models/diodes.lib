@@ -1,5 +1,5 @@
-******************************************************************************* 
-*                                                                             * 
+*******************************************************************************
+*                                                                             *
 * Copyright 2023 IHP PDK Authors                                              *
 *                                                                             *
 * Licensed under the Apache License, Version 2.0 (the "License");             *
@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and         *
 * limitations under the License.                                              *
 *                                                                             *
-******************************************************************************* 
+*******************************************************************************
 
 .MODEL darea D (tnom=27 is=2.315E-019 n=1.009 ikff=1.434E-007 rs=2.193E+005 cj0=9.371E-016 m=0.3036 vj=0.696 fc=0.5 bv=11.64 ibv=3.458E-007 tbv1=0.001 ibvl=6.485E-014 nbv = 48.9 nbvl=8.237 isr=7.413E-019 xti=5.039 trs=0 trs2=0 tt=7.009E-007)
 .MODEL dperim D (tnom=27 is=3.851E-021 n=1.022 rs=1.688E+006 ikff=7.838E-008 isr=1.011E-017 xti=3 bv=31.86 ibv=6.115E-014 ibvl=2.437E-014 nbv=112.1 nbvl=269.7 cj=1.821E-017 m=0.01923 vj=0.1306 tt=7.009E-007)
@@ -36,7 +36,7 @@
 * DC range: -15V ... 1V
 * Operator: Korndoerfer
 * Date: 05.03.2013
-* 24.03.2015 WW area dependency and and temperature dependency 
+* 24.03.2015 WW area dependency and and temperature dependency
 * for dantenna and dpantenna break down updated
 * Remarks: model is designed for reverse direction of the diodes
 *          NO statistics
@@ -50,10 +50,10 @@
 *subckt dantenna (bn C)
 *                (anode  cathode)
 *      (substrate/pWell  NSD)
-.param l=780n   
-.param w=780n 
-.param DEV_A={(l*w)/1p}  
-.param DEV_P={(l+w)/0.5u}  
+.param l=780n
+.param w=780n
+.param DEV_A={(l*w)/1p}
+.param DEV_P={(l+w)/0.5u}
 .param DEV_C=4
 D1 1 2 darea area={DEV_A}
 D2 1 2 dperim area={DEV_P}
@@ -85,10 +85,10 @@ D3 1 2 dcorner area={DEV_C}
 .subckt dpantenna 1 2
 *              (PSD  nWell)
 *             (anode  cathode)
-.param l=780n  
-.param w=780n  
-.param DEV_A={(l*w)/1p}  
-.param DEV_P={(l+w)/0.5u}  
+.param l=780n
+.param w=780n
+.param DEV_A={(l*w)/1p}
+.param DEV_P={(l+w)/0.5u}
 .param DEV_C=4
 
 D1 1 2 dparea area={DEV_A}
@@ -179,7 +179,7 @@ dinrevlside NWell isosub dinrevlside_mod area=mf*pws pj=0
 dinrevh NWell isosub dinrevh_mod area=mf*aws pj=0
 dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 
-.model dinner_mod d tnom=27 level=2 
+.model dinner_mod d tnom=27 level=2
 +is=1.5e-19
 +n=1.02
 +ikf=100e-9
@@ -190,7 +190,7 @@ dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 *+tbv1=-698.557e-6
 +rs=5e5
 
-.model dinrevl_mod d tnom=27 level=2 
+.model dinrevl_mod d tnom=27 level=2
 +is=1e-18
 +n=100
 +xti=2200
@@ -200,12 +200,12 @@ dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 +n=100
 +xti=2200
 
-.model dinrevh_mod d tnom=27 level=2 
+.model dinrevh_mod d tnom=27 level=2
 +is=3e-21
 +n=30
 +xti=700
 
-.model dincaparea_mod d tnom=27 level=2 
+.model dincaparea_mod d tnom=27 level=2
 +is=1e-25
 +cj=967.2e-18
 +cjsw=436e-18
@@ -214,7 +214,7 @@ dincaparea isosub NWell dincaparea_mod area=mf*aws pj=mf*pws-3
 +vj=0.7312
 +php=0.7036
 
-.model dinneredge_mod d tnom=27 level=2 
+.model dinneredge_mod d tnom=27 level=2
 +is=3.89e-20
 +jsw=7.239e-20
 +n=1.01
@@ -252,7 +252,7 @@ douteredge0 bn NWell dsubedge0_mod area=mf*pbs pj=mf*pbs
 doutcapcorner bn NWell doutcapcorner_mod area=0 pj=mf*14.4
 doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 
-.model dsub_mod d tnom=27 level=2 
+.model dsub_mod d tnom=27 level=2
 +is=4.052e-18
 +n=1.01
 +ikf=1.023e-9
@@ -263,7 +263,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 +isr=86e-18
 +rs=5e5
 
-.model dsubedge0_mod d tnom=27 level=2 
+.model dsubedge0_mod d tnom=27 level=2
 +is=4.052e-18
 +n=1.01
 +jsw=17.26e-18
@@ -276,7 +276,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 *+nz=0.5
 +rs=10e3
 
-.model dsubedgexds_mod d tnom=27 level=2 
+.model dsubedgexds_mod d tnom=27 level=2
 +is=4.052e-18
 +n=1.01
 +jsw=17.26e-18
@@ -290,7 +290,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 +rs=28e3
 +rsw=16e3
 
-.model doutcapcorner_mod d tnom=27 level=2 
+.model doutcapcorner_mod d tnom=27 level=2
 +jsw=1e-25
 +cjsw='(389.8354-784.332*xds+736.9852*(xds**1.33)-91.4155*xds*xds+5.388092*xds*xds*xds)*1e-18'
 +mjsw='0.3029153+16.37804*xds-16.45657*(xds**0.9972906)'
@@ -298,7 +298,7 @@ doutcaparea bn NWell doutcaparea_mod area=mf*abus pj=mf*pbs
 *+bv='(213.2898+(145-213.2898)/((1+(xds/0.9145351)**38.88081)**0.02169905))'
 *+nz=200
 
-.model doutcaparea_mod d tnom=27 level=2 
+.model doutcaparea_mod d tnom=27 level=2
 +is=1e-25
 +cj=70.13e-18
 +m=0.3874

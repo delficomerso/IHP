@@ -1,23 +1,33 @@
-info:
-  vlsir:
-    model: sg13_lv_nmos
-    params:
-      l: 0.0
-      m: 1
-      ng: 1
-      w: 0.0
-    port_map:
-      D: d
-      G: g
-      S: s
-    port_order:
-    - d
-    - g
-    - s
-    - b
-    spice_lib: sg13g2_moslv_mod.lib
-    spice_type: SUBCKT
+info: {}
 name: nmos_W0p15_L0p13_N1_M1_Msg13_lv_nmos
+ports:
+  D:
+    center:
+    - 0.72
+    - 0.15
+    layer: Metal1pin
+    name: D
+    orientation: 0
+    port_type: electrical
+    width: 0.26
+  G:
+    center:
+    - 0.435
+    - 0.15
+    layer: GatPolypin
+    name: G
+    orientation: 270
+    port_type: electrical
+    width: 0.51
+  S:
+    center:
+    - 0.15
+    - 0.15
+    layer: Metal1pin
+    name: S
+    orientation: 180
+    port_type: electrical
+    width: 0.26
 settings:
   length: 0.13
   m: 1

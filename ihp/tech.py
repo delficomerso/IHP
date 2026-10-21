@@ -11,7 +11,6 @@ from functools import partial
 from typing import Any
 
 import gdsfactory as gf
-from doroutes.bundles import add_bundle_astar
 from gdsfactory import typings
 from gdsfactory.component import Component
 from gdsfactory.cross_section import (
@@ -25,8 +24,6 @@ from gdsfactory.technology import LayerLevel, LayerMap, LayerStack
 from gdsfactory.typings import Layer, LayerSpec
 from pydantic import BaseModel
 
-# Import CNI tech for cells2 compatibility
-from cni.tech import Tech as _CNITech
 from ihp.config import PATH
 
 nm = 1e-3
@@ -449,12 +446,39 @@ def add_labels_to_ports_optical(
 margin = 0.5
 
 
+def get_routing_stack() -> LayerStack:
+    """Returns IHP PDK LayerStack with only metallization and GatPoly layers.
+
+    Subset of get_layer_stack() for routing and interconnect visualization.
+    """
+    _routing_keys = {
+        "poly": "GatPoly",
+        "metal1": "Metal1",
+        "metal2": "Metal2",
+        "metal3": "Metal3",
+        "metal4": "Metal4",
+        "metal5": "Metal5",
+        "topmetal1": "TopMetal1",
+        "topmetal2": "TopMetal2",
+    }
+    full = get_layer_stack()
+    return LayerStack(
+        layers={
+            _routing_keys[k]: v
+            for k, v in full.layers.items()
+            if k in _routing_keys.keys()
+        }
+    )
+
+
 def get_layer_stack(
     thickness_gatpoly: float = 0.16,  # GatPoly thickness (160nm from process spec)
     thickness_cont: float = 0.64,  # Activ-M1 Cont thickness (640nm from process spec)
     thickness_metal1: float = 0.42,  # Metal1 thickness (420 nm from process specs)
     thickness_metal: float = 0.49,  # Metal2-5 thickness (490 nm from process specs)
     thickness_via: float = 0.54,  # Via1-4 thickness (540 nm from process specs)
+    thickness_mim_diel: float = 0.04,  # MIM layer dielectric thickness (40 nm from process specs, see https://github.com/IHP-GmbH/IHP-Open-PDK/blob/main/ihp-sg13g2/libs.tech/klayout/tech/xsect/sg13g2_for_EM.xs)
+    thickness_mim_top: float = 0.15,  # MIM metal layer thickness (150 nm from process specs, see https://github.com/IHP-GmbH/IHP-Open-PDK/blob/main/ihp-sg13g2/libs.tech/klayout/tech/xsect/sg13g2_for_EM.xs)
     thickness_topvia1: float = 0.85,  # TopVia1 thickness (850 nm from process specs)
     thickness_topmetal1: float = 2.0,  # TopMetal1 thickness (2000 nm from process specs)
     thickness_topvia2: float = 2.8,  # TopVia2 thickness (2800 nm from process specs)
@@ -498,6 +522,16 @@ def get_layer_stack(
     z_tm1_top = z_tv1_top + thickness_topmetal1
     z_tv2_top = z_tm1_top + thickness_topvia2
     z_tm2_top = z_tv2_top + thickness_topmetal2
+
+    z_mim_diel_top = z_m5_top + thickness_mim_diel
+
+    mim_top_layer_level = LayerLevel(  # Ensuring backwards compatibility
+        layer=LAYER.MIMdrawing,
+        thickness=thickness_mim_top,  # 150 nm MIM top-plate metal
+        zmin=z_mim_diel_top,
+        material="sg13g2_mim",
+        info={"mesh_order": 23, "layer_type": "conductor"},
+    )
 
     return LayerStack(
         layers=dict(
@@ -617,12 +651,12 @@ def get_layer_stack(
                 info={"mesh_order": 12},
             ),
             # ============ Contact ============
-            # Cont - tungsten contact plugs (Activ/Poly to Metal1)
+            # Cont - effective contact-plug model (Activ/Poly to Metal1)
             cont=LayerLevel(
                 layer=LAYER.Contdrawing,
                 thickness=thickness_cont,
                 zmin=z_active_top,
-                material="tungsten",
+                material="sg13g2_cont",
                 info={"mesh_order": 13},
             ),
             # ============ BEOL metals and vias ============
@@ -631,7 +665,7 @@ def get_layer_stack(
                 layer=LAYER.Metal1drawing,
                 thickness=thickness_metal1,
                 zmin=z_m1,
-                material="aluminum",
+                material="alcu_sg13g2_metal1",
                 info={"mesh_order": 14},
             ),
             # Via 1
@@ -639,7 +673,7 @@ def get_layer_stack(
                 layer=LAYER.Via1drawing,
                 thickness=thickness_via,
                 zmin=z_beol,
-                material="tungsten",
+                material="tungsten_sg13g2_via1",
                 info={"mesh_order": 15},
             ),
             # Metal 2
@@ -647,7 +681,7 @@ def get_layer_stack(
                 layer=LAYER.Metal2drawing,
                 thickness=thickness_metal,
                 zmin=z_beol + thickness_via,
-                material="aluminum",
+                material="alcu_sg13g2_metal2",
                 info={"mesh_order": 16},
             ),
             # Via 2
@@ -655,7 +689,7 @@ def get_layer_stack(
                 layer=LAYER.Via2drawing,
                 thickness=thickness_via,
                 zmin=z_beol + thickness_via + thickness_metal,
-                material="tungsten",
+                material="tungsten_sg13g2_via2",
                 info={"mesh_order": 17},
             ),
             # Metal 3
@@ -663,7 +697,7 @@ def get_layer_stack(
                 layer=LAYER.Metal3drawing,
                 thickness=thickness_metal,
                 zmin=z_beol + 2 * thickness_via + thickness_metal,
-                material="aluminum",
+                material="alcu_sg13g2_metal3",
                 info={"mesh_order": 18},
             ),
             # Via 3
@@ -671,7 +705,7 @@ def get_layer_stack(
                 layer=LAYER.Via3drawing,
                 thickness=thickness_via,
                 zmin=z_beol + 2 * thickness_via + 2 * thickness_metal,
-                material="tungsten",
+                material="tungsten_sg13g2_via3",
                 info={"mesh_order": 19},
             ),
             # Metal 4
@@ -679,7 +713,7 @@ def get_layer_stack(
                 layer=LAYER.Metal4drawing,
                 thickness=thickness_metal,
                 zmin=z_beol + 3 * thickness_via + 2 * thickness_metal,
-                material="aluminum",
+                material="alcu_sg13g2_metal4",
                 info={"mesh_order": 20},
             ),
             # Via 4
@@ -687,7 +721,7 @@ def get_layer_stack(
                 layer=LAYER.Via4drawing,
                 thickness=thickness_via,
                 zmin=z_beol + 3 * thickness_via + 3 * thickness_metal,
-                material="tungsten",
+                material="tungsten_sg13g2_via4",
                 info={"mesh_order": 21},
             ),
             # Metal 5
@@ -695,24 +729,26 @@ def get_layer_stack(
                 layer=LAYER.Metal5drawing,
                 thickness=thickness_metal,
                 zmin=z_beol + 4 * thickness_via + 3 * thickness_metal,
-                material="aluminum",
+                material="alcu_sg13g2_metal5",
                 info={"mesh_order": 22},
             ),
             # MIM capacitor - dielectric 40nm (TISMIM) + top plate 150nm (TMIMTOP)
             # Sits on top of Metal5
-            mim=LayerLevel(
+            mim_diel=LayerLevel(
                 layer=LAYER.MIMdrawing,
-                thickness=0.04 + 0.15,
+                thickness=thickness_mim_diel,  # 40 nm MIM dielectric
                 zmin=z_m5_top,
-                material="sio2",
+                material="sin",  # high-k nitride, εᵣ ≈ 7.5
                 info={"mesh_order": 23},
             ),
+            # mim_top=mim_top_layer_level, # Alias, breaks extrusion - extruded layout duplicates MIM layer in its metal section.
+            mim=mim_top_layer_level,  # Ensure backwards compatibility
             # Vmim - MIM via (connects MIM top plate to TopMetal1)
             vmim=LayerLevel(
                 layer=LAYER.Vmimdrawing,
-                thickness=thickness_topvia1 - 0.19,
-                zmin=z_m5_top + 0.19 + 0.01,
-                material="tungsten",
+                thickness=thickness_topvia1 - (thickness_mim_diel + thickness_mim_top),
+                zmin=z_m5_top + thickness_mim_diel + thickness_mim_top,  # + 0.01,
+                material="sg13g2_vmim",
                 info={"mesh_order": 24},
             ),
             # TopVia1
@@ -720,7 +756,7 @@ def get_layer_stack(
                 layer=LAYER.TopVia1drawing,
                 thickness=thickness_topvia1,
                 zmin=z_m5_top,
-                material="tungsten",
+                material="tungsten_sg13g2_topvia1",
                 info={"mesh_order": 25},
             ),
             # TopMetal1
@@ -728,7 +764,7 @@ def get_layer_stack(
                 layer=LAYER.TopMetal1drawing,
                 thickness=thickness_topmetal1,
                 zmin=z_tv1_top,
-                material="aluminum",
+                material="alcu_sg13g2_topmetal1",
                 info={"mesh_order": 26},
             ),
             # TopVia2
@@ -736,7 +772,7 @@ def get_layer_stack(
                 layer=LAYER.TopVia2drawing,
                 thickness=thickness_topvia2,
                 zmin=z_tm1_top,
-                material="tungsten",
+                material="tungsten_sg13g2_topvia2",
                 info={"mesh_order": 27},
             ),
             # TopMetal2
@@ -744,7 +780,7 @@ def get_layer_stack(
                 layer=LAYER.TopMetal2drawing,
                 thickness=thickness_topmetal2,
                 zmin=z_tv2_top,
-                material="aluminum",
+                material="alcu_sg13g2_topmetal2",
                 info={"mesh_order": 28},
             ),
             # ============ Passivation / pad ============
@@ -779,6 +815,8 @@ class TechIHP(BaseModel):
     cont_enc_active: float = 0.07
     cont_enc_poly: float = 0.07
     cont_enc_metal: float = 0.06
+    cont_b1: float = 0.2
+    cont_b1_nr: float = 4.0
 
     via1_size: float = 0.26
     via1_spacing: float = 0.36
@@ -821,6 +859,7 @@ class TechIHP(BaseModel):
     gat_d: float = 0.07  # Gat_d
     psd_activ_over: float = 0.18  # pSD_c
     psd_gate_over_lv: float = 0.3  # pSD_i
+    pSD_a: float = 0.31
     psd_gate_over_hv: float = 0.4  # pSD_i1
     nw_activ_over_lv: float = 0.31  # NW_c
     nw_activ_over_hv: float = 0.62  # NW_c1
@@ -963,8 +1002,16 @@ class TechIHP(BaseModel):
     # Capacitors
     cmim_min_size: float = 1.14
     cmim_max_size: float = 1000.0
-    rfcmim_min_size: float = 7.0
+    rfcmim_min_size: float = 1.14
     rfcmim_max_size: float = 1000.0
+
+    # MIM capacitor model parameters (from sg13g2_tech.json)
+    cmim_caspec: float = 1.5  # fF/um² — area-specific capacitance
+    cmim_cpspec: float = 0.04  # fF/um  — perimeter-specific capacitance
+    cmim_lwd: float = 0.01  # um     — line-width delta
+    rfcmim_caspec: float = 1.5  # fF/um²
+    rfcmim_cpspec: float = 0.04  # fF/um
+    rfcmim_lwd: float = 0.01  # um
 
     # Taps
     ptap1_min_size: float = 0.78
@@ -977,10 +1024,12 @@ class TechIHP(BaseModel):
     dantenna_max_width: float = 1000.0
     dantenna_min_length: float = 0.48
     dantenna_max_length: float = 1000.0
+    dantenna_dov: float = 0.02
     dpantenna_min_width: float = 0.48
     dpantenna_max_width: float = 1000.0
     dpantenna_min_length: float = 0.48
     dpantenna_max_length: float = 1000.0
+    dpantenna_dov: float = 0.02
 
     # Sealring
     sealring_min_width: float = 150.0
@@ -991,7 +1040,44 @@ class TechIHP(BaseModel):
 
 TECH = TechIHP()
 LAYER_STACK = get_layer_stack()
+ROUTING_STACK = get_routing_stack()
 LAYER_VIEWS = gf.technology.LayerViews(PATH.lyp_yaml)
+
+
+def CbCapCalc(calc: str, c: float, length: float, width: float, cell: str) -> float:
+    """Calculate MIM capacitor parameters (all dimensions in um, capacitance in fF).
+
+    Args:
+        calc: "C" (capacitance from l/w), "l" (length from C/w),
+            "w" (width from C/l), "lw" (square dimension from C).
+        c: Capacitance in fF (used when calc != "C").
+        length: Length in um.
+        width: Width in um.
+        cell: Model name ("cmim" or "rfcmim").
+    """
+    from math import sqrt
+
+    caspec = getattr(TECH, f"{cell}_caspec")  # fF/um²
+    cpspec = getattr(TECH, f"{cell}_cpspec")  # fF/um
+    lwd = getattr(TECH, f"{cell}_lwd")  # um
+
+    if calc == "C":
+        leff = length + lwd
+        weff = width + lwd
+        return leff * weff * caspec + 2.0 * (leff + weff) * cpspec
+    elif calc == "l":
+        weff = width + lwd
+        return (c - 2.0 * weff * cpspec) / (caspec * weff + 2.0 * cpspec) - lwd
+    elif calc == "w":
+        leff = length + lwd
+        return (c - 2.0 * leff * cpspec) / (caspec * leff + 2.0 * cpspec) - lwd
+    elif calc == "lw":
+        return (
+            -2.0 * cpspec / caspec
+            + sqrt(4.0 * cpspec**2 / caspec**2 + c / caspec)
+            - lwd
+        )
+    return 0.0
 
 
 ############################
@@ -1015,6 +1101,7 @@ def metal_routing(
         width=width,
         layer=layer,
         radius=radius,
+        radius_min=None,
         port_names=port_names,
         port_types=port_types,
         **kwargs,
@@ -1098,36 +1185,22 @@ route_bundle_metal_corner = partial(
     port_type="electrical",
 )
 
-route_astar = partial(
-    add_bundle_astar,
-    layers=["TOPMETAL2"],
-    bend="bend_euler",
-    straight="straight",
-    grid_unit=500,
-    spacing=3,
-)
-
-route_astar_metal = partial(
-    add_bundle_astar,
-    layers=["TOPMETAL2"],
-    bend="wire_corner",
-    straight="straight_metal",
-    grid_unit=500,
-    spacing=15,
-)
-
 
 routing_strategies = dict(
     route_bundle=route_bundle,
     route_bundle_rib=route_bundle_rib,
     route_bundle_metal=route_bundle_metal,
     route_bundle_metal_corner=route_bundle_metal_corner,
-    route_astar=route_astar,
-    route_astar_metal=route_astar_metal,
 )
 
-# techParams from CNI layer for cells2 compatibility
-techParams = _CNITech.get("SG13_dev").getTechParams()
+
+def __getattr__(name: str) -> object:
+    if name == "techParams":
+        from cni.tech import Tech as _CNITech
+
+        return _CNITech.get("SG13_dev").getTechParams()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 if __name__ == "__main__":
     LAYER_VIEWS.to_lyp(PATH.lyp)

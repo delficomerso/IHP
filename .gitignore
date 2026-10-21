@@ -1,12 +1,21 @@
 ihp-klayout/
-docs/cells.rst
-docs/cells_fixed.rst
-docs/cells2_reference.rst
+docs/cells.md
+docs/layer_stack.md
+docs/cells_fixed.md
+docs/cells2_reference.md
+docs/changelog.md
+docs/index.md
+docs/palace_demo_cpw.md
+docs/palace_demo_microstrip.md
+docs/examples/
 *.glb
 
 # Simulation outputs
 sim-data-*/
 palace-sim-*/
+
+# VACASK Verilog-A modules compiled on the fly (never committed)
+*.osdi
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -106,6 +115,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/changelog.md
+docs/index.md
 
 # PyBuilder
 .pybuilder/
@@ -177,3 +188,8 @@ cython_debug/
 *.DS_Store
 .DS_Store
 *Thumbs.db
+.pre-commit-config.yaml
+
+# LLM
+.agents
+.cursor

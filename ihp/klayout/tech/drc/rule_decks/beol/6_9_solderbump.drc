@@ -39,7 +39,7 @@ if TABLES.include?('solderbump') || BEOL
   # Rule Padb.b: Min. SBumpPad space is 70.00 um
   logger.info('Executing rule Padb.b')
   padb_b_value = drc_rules['Padb_b'].to_f
-  padb_b = sbumppad.space(padb_b_value.um, euclidian)
+  padb_b = sbumppad.space(padb_b_value.um, euclidean)
   padb_b.output('Padb.b', "6.9. Padb.b : Min. SBumpPad space is #{padb_b_value} um")
   padb_b.forget
 
@@ -68,7 +68,7 @@ if TABLES.include?('solderbump') || BEOL
     # Rule Padb.d: Min. SBumpPad space to EdgeSeal is 50.00 um
     logger.info('Executing rule Padb.d')
     padb_d_value = drc_rules['Padb_d'].to_f
-    padb_d = sbumppad.sep(edgeseal_drw, padb_d_value.um, euclidian)
+    padb_d = sbumppad.sep(edgeseal_drw, padb_d_value.um, euclidean)
     padb_d.output('Padb.d', "6.9. Padb.d : Min. SBumpPad space to EdgeSeal is #{padb_d_value} um")
     padb_d.forget
   end

@@ -29,7 +29,7 @@ if TABLES.include?('lbe') || BEOL
   # Rule LBE.a: Min. LBE width is 100.00µm
   logger.info('Executing rule LBE.a')
   lbe_a_value = drc_rules['LBE_a'].to_f
-  lbea_l1 = lbe_drw.width(lbe_a_value.um, euclidian)
+  lbea_l1 = lbe_drw.width(lbe_a_value.um, euclidean)
   lbea_l1.output('LBE.a', "9.1. LBE.a: Min. LBE width: #{lbe_a_value} µm")
   lbea_l1.forget
 
@@ -50,14 +50,14 @@ if TABLES.include?('lbe') || BEOL
   # Rule LBE.c: Min. LBE space or notch is 100.00µm
   logger.info('Executing rule LBE.c')
   lbe_c_value = drc_rules['LBE_c'].to_f
-  lbec_l1 = lbe_drw.space(lbe_c_value.um, euclidian)
+  lbec_l1 = lbe_drw.space(lbe_c_value.um, euclidean)
   lbec_l1.output('LBE.c', "9.1. LBE.c: Min. LBE space or notch: #{lbe_c_value} µm")
   lbec_l1.forget
 
   # Rule LBE.d: Min. LBE space to inner edge of EdgeSeal is 150.00µm
   logger.info('Executing rule LBE.d')
   lbe_d_value = drc_rules['LBE_d'].to_f
-  lbed_l1 = lbe_in_seal.sep(edgeseal_drw, lbe_d_value.um, euclidian)
+  lbed_l1 = lbe_in_seal.sep(edgeseal_drw, lbe_d_value.um, euclidean)
   lbed_l1.output('LBE.d', "9.1. LBE.d: Min. LBE space to inner edge of EdgeSeal: #{lbe_d_value} µm")
   lbed_l1.forget
 

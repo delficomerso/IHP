@@ -1,2 +1,3 @@
 [codespell]
-ignore-words-list = activ,passiv,te,fpr,nd,donot,schem,Contnet
+ignore-words-list = activ,passiv,te,fpr,nd,donot,schem,Contnet,contnet,rady,inout,INOUT,nam,coul,calles,wether,rsource,orginal,delT,Copytight
+skip = *.lock,*.svg,*.gds,*.oas,*.lib,ihp/models/ngspice/va/*,cni/*

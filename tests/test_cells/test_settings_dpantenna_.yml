@@ -1,16 +1,6 @@
-info:
-  vlsir:
-    model: dpantenna
-    params:
-      l: 0.0
-      w: 0.0
-    port_map: {}
-    port_order:
-    - '1'
-    - '2'
-    spice_lib: diodes.lib
-    spice_type: SUBCKT
+info: {}
 name: dpantenna_W0p78_L0p78_At_Gnone_G1
+ports: {}
 settings:
   addRecLayer: t
   guardRingDistance: 1

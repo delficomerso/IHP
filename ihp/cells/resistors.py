@@ -2,9 +2,13 @@
 
 import gdsfactory as gf
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
 
 from ihp.tech import TECH as _TECH
+
+_XS = "metal1_routing"
 
 
 def add_rect(
@@ -21,7 +25,46 @@ def add_rect(
     return ref
 
 
-@gf.cell
+def rsil_schematic(
+    dy: float = 0.5,
+    dx: float = 0.5,
+    resistance: float | None = None,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "P1", "side": "top", "type": "electric"},
+        {"name": "P2", "side": "bottom", "type": "electric"},
+        {"name": "BN", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "rsil",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["P1", "P2", "BN"],
+            "params": {"w": "dx * 1e-6", "l": "dy * 1e-6", "m": "1"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "rsil",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["P1", "P2", "BN"],
+            "params": {"w": "dx * 1e-6", "l": "dy * 1e-6", "m": "1"},
+        },
+    ]
+    s.create_port(name="P1", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="P2", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rsil_schematic, tags=["IHP", "resistor", "silicided"])
 def rsil(
     dy: float = 0.5,
     dx: float = 0.5,
@@ -197,20 +240,50 @@ def rsil(
         }
     )
 
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": model,
-        "spice_type": "SUBCKT",
-        "spice_lib": "resistors_mod.lib",
-        "port_order": ["1", "2", "bn"],
-        "port_map": {"P1": "1", "P2": "2"},
-        "params": {"w": dx * 1e-6, "l": dy * 1e-6, "m": 1},
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"P1": ["P1"], "P2": ["P2"]})
     return c
 
 
-@gf.cell
+def rppd_schematic(
+    dy: float = 0.5,
+    dx: float = 0.5,
+    resistance: float | None = None,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "P1", "side": "top", "type": "electric"},
+        {"name": "P2", "side": "bottom", "type": "electric"},
+        {"name": "BN", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "rppd",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["P1", "P2", "BN"],
+            "params": {"w": "dx * 1e-6", "l": "dy * 1e-6", "m": "1"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "rppd",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["P1", "P2", "BN"],
+            "params": {"w": "dx * 1e-6", "l": "dy * 1e-6", "m": "1"},
+        },
+    ]
+    s.create_port(name="P1", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="P2", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rppd_schematic, tags=["IHP", "resistor", "unsilicided"])
 def rppd(
     dy: float = 0.5,
     dx: float = 0.5,
@@ -400,20 +473,50 @@ def rppd(
         }
     )
 
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": model,
-        "spice_type": "SUBCKT",
-        "spice_lib": "resistors_mod.lib",
-        "port_order": ["1", "3", "bn"],
-        "port_map": {"P1": "1", "P2": "3"},
-        "params": {"w": dx * 1e-6, "l": dy * 1e-6, "m": 1},
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"P1": ["P1"], "P2": ["P2"]})
     return c
 
 
-@gf.cell
+def rhigh_schematic(
+    dy: float = 0.96,
+    dx: float = 0.5,
+    resistance: float | None = None,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "P1", "side": "top", "type": "electric"},
+        {"name": "P2", "side": "bottom", "type": "electric"},
+        {"name": "BN", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "rhigh",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["P1", "P2", "BN"],
+            "params": {"w": "dx * 1e-6", "l": "dy * 1e-6", "m": "1"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "rhigh",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerRES.lib",
+            "sections": ["res_typ", "res_bcs", "res_wcs"],
+            "port_order": ["P1", "P2", "BN"],
+            "params": {"w": "dx * 1e-6", "l": "dy * 1e-6", "m": "1"},
+        },
+    ]
+    s.create_port(name="P1", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="P2", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="BN", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rhigh_schematic, tags=["IHP", "resistor", "high-r"])
 def rhigh(
     dy: float = 0.96,
     dx: float = 0.5,
@@ -604,39 +707,5 @@ def rhigh(
         }
     )
 
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": model,
-        "spice_type": "SUBCKT",
-        "spice_lib": "resistors_mod.lib",
-        "port_order": ["1", "3", "bn"],
-        "port_map": {"P1": "1", "P2": "3"},
-        "params": {"w": dx * 1e-6, "l": dy * 1e-6, "m": 1},
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"P1": ["P1"], "P2": ["P2"]})
     return c
-
-
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK
-    from ihp.cells import fixed
-
-    PDK.activate()
-
-    # Test the components
-    c0 = fixed.rsil()  # original
-    c1 = rsil()  # New
-    c = xor(c0, c1)
-    c.show()
-
-    # c0 = fixed.rppd()  # original
-    # c1 = rppd()  # New
-    # c = xor(c0, c1)
-    # c.show()
-
-    # c0 = fixed.rhigh()  # original
-    # c1 = rhigh()  # New
-    # c = xor(c0, c1)
-    # c.show()

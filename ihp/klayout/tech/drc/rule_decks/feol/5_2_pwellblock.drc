@@ -30,7 +30,7 @@ if TABLES.include?('pwellblock') || FEOL
     logger.info('Executing rule PWB.e')
     pwb_e_value = drc_rules['PWB_e'].to_f
     pwb_e_l1 = nact_fet.not(thickgateox_drw)
-    pwb_l = pwell_block.sep(pwb_e_l1, pwb_e_value.um, euclidian)
+    pwb_l = pwell_block.sep(pwb_e_l1, pwb_e_value.um, euclidean)
     pwb_l.output('PWB.e',
                  "5.2. PWB.e Min. PWell:block space to (N+Activ not inside ThickGateOx) in PWell is #{pwb_e_value} um")
     pwb_e_l1.forget
@@ -40,7 +40,7 @@ if TABLES.include?('pwellblock') || FEOL
     logger.info('Executing rule PWB.e1')
     pwb_e1_value = drc_rules['PWB_e1'].to_f
     pwb_e1_l1 = nact_fet.and(thickgateox_drw)
-    pwb_e1_l = pwell_block.sep(pwb_e1_l1, pwb_e1_value.um, euclidian)
+    pwb_e1_l = pwell_block.sep(pwb_e1_l1, pwb_e1_value.um, euclidean)
     pwb_e1_l.output('PWB.e1',
                     "5.2. PWB.e1 Min. PWell:block space to (N+Activ inside ThickGateOx) in PWell is #{pwb_e1_value} um")
     pwb_e1_l1.forget
@@ -50,7 +50,7 @@ if TABLES.include?('pwellblock') || FEOL
     logger.info('Executing rule PWB.f')
     pwb_f_value = drc_rules['PWB_f'].to_f
     pwb_f_l1 = ptap.not(thickgateox_drw)
-    pwb_f_l = pwell_block.sep(pwb_f_l1, pwb_f_value.um, euclidian)
+    pwb_f_l = pwell_block.sep(pwb_f_l1, pwb_f_value.um, euclidean)
     pwb_f_l.output('PWB.f',
                    "5.2. PWB.f Min. PWell:block space to (P+Activ not inside ThickGateOx) in PWell is #{pwb_f_value} um")
     pwb_f_l1.forget
@@ -65,7 +65,7 @@ if TABLES.include?('pwellblock') || FEOL
 
     pwb_f1_l1 = ptap.and(thickgateox_drw)
     pwb_f1_l2 = pwell_block.outside(schottky_nbl1)
-    pwb_f1_l = pwb_f1_l2.sep(pwb_f1_l1, pwb_f1_value.um, euclidian)
+    pwb_f1_l = pwb_f1_l2.sep(pwb_f1_l1, pwb_f1_value.um, euclidean)
     pwb_f1_l.output('PWB.f1',
                     "5.2. PWB.f1 Min. PWell:block space to (P+Activ inside ThickGateOx) in PWell #{pwb_f1_value} um")
     pwb_f1_l1.forget

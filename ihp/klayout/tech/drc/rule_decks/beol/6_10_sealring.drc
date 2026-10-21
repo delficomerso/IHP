@@ -92,7 +92,7 @@ if TABLES.include?('sealring') || BEOL
     seal_b_names.zip(seal_b_lays).each do |seal_b_lay, lay|
       logger.info("Executing rule seal.b_#{seal_b_lay}")
       seal_b_l1 = lay.and(edgeseal_drw)
-      seal_b_l = activ_drw.sep(seal_b_l1, seal_b_value.um, euclidian)
+      seal_b_l = activ_drw.sep(seal_b_l1, seal_b_value.um, euclidean)
       seal_b_l.output("Seal.b_#{seal_b_lay}",
                     "6.10. Seal.b_#{seal_b_lay} : Min. Activ space to EdgeSeal-#{seal_b_lay} is #{seal_b_value} um")
       seal_b_l1.forget

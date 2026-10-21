@@ -1,15 +1,15 @@
-******************************************************************************* 
-*                                                                             * 
-* Library:      SG13G2_dev                                                    * 
+*******************************************************************************
+*                                                                             *
+* Library:      SG13G2_dev                                                    *
 * Technologies: SG13G2                                                        *
 * Component:    Spectre model file for Spectre 18                             *
 *                                                                             *
 * Simulator:    Spectre 20.1                                                  *
 * Model:        PSP 103.6                                                     *
-* Revision:     210511                                                        * 
-*                                                                             * 
-******************************************************************************* 
-*                                                                             * 
+* Revision:     210511                                                        *
+*                                                                             *
+*******************************************************************************
+*                                                                             *
 * Copyright 2023 IHP PDK Authors                                              *
 *                                                                             *
 * Licensed under the Apache License, Version 2.0 (the "License");             *
@@ -25,13 +25,13 @@
 * limitations under the License.                                              *
 *                                                                             *
 *******************************************************************************
-******************************************************************************* 
+*******************************************************************************
 *                                                                             *
 *                                                                             *
 *                            M O S     C O R N E R S                          *
 *                                                                             *
 *                                                                             *
-******************************************************************************* 
+*******************************************************************************
 *
 * NOTE: use only typical mean file (this file) for Monte Carlo simulations of process tolerance!
 *
@@ -40,20 +40,20 @@
 *
 * Corner naming scheme: typical mean=tt, worst case=ss, best case=ff, combinations sf, fs, ...
 * Digit	Devices
- 
+
 
 * Monte-Carlo begin ---------------------------------------------
 *
 * NOTE: default of all  .param should be 1.0
 * NOTE: deviations from 1.0 are used to fit statistical results
-* 
+*
 *
 *
 *
 *******************************************************************************
-*                                                                             
-* High Voltage (hv) MOS Transistors   
-*                                                 
+*
+* High Voltage (hv) MOS Transistors
+*
 * Model:                                PSP 103.6
 * Date:                                 10.03.2020
 * Lot:                                  EDJ
@@ -61,17 +61,17 @@
 * CHIP Nr:                              x=3, y=9
 * Device:                               SG13G2
 * Maximum drain-source voltage:         3.3
-* Measurement data:                     
+* Measurement data:
 * Nom. Temperature  (TNOM):             27 grd C
 * Meas. Temperature (TEMP):             27 grd C
 * Valid range for model:                L = (0.45 - 10)um   nmos
 *                                       L = (0.40 - 10)um   pmos
 *                                       W = (0.30 - 10)um
-*                                                                             
+*
 *******************************************************************************
 
-**************** CORNER_LIB OF sg13g2_hv TT MODEL ****************  
-* Typical without statistical     
+**************** CORNER_LIB OF sg13g2_hv TT MODEL ****************
+* Typical without statistical
 .LIB mos_tt
 .param sg13g2_hv_nmos_vfbo_mm= 1.0
 .param sg13g2_hv_nmos_rsgo   = 1.0000
@@ -112,14 +112,14 @@
 .param sg13g2_hv_pmos_cjorsti= 1.0000
 .param sg13g2_hv_pmos_cjorgat= 1.0000
 
-.param sg13g2_hv_svaricap_lap   = 0.8     
-.param sg13g2_hv_svaricap_toxo  = 1     
-  
+.param sg13g2_hv_svaricap_lap   = 0.8
+.param sg13g2_hv_svaricap_toxo  = 1
+
 .include sg13g2_moshv_mod.lib
-.ENDL mos_tt  
-  
-* Typical with statistical     
-.LIB mos_tt_stat 
+.ENDL mos_tt
+
+* Typical with statistical
+.LIB mos_tt_stat
 .param sg13g2_hv_nmos_vfbo_mm_norm= 1.0
 .param sg13g2_hv_nmos_rsgo_norm   = 1.0000
 .param sg13g2_hv_nmos_rsw1_norm   = 0.7886
@@ -159,14 +159,14 @@
 .param sg13g2_hv_pmos_cjorsti_norm= 1.0000
 .param sg13g2_hv_pmos_cjorgat_norm= 1.0000
 
-.param sg13g2_hv_svaricap_lap   = 0.8     
-.param sg13g2_hv_svaricap_toxo  = 1     
-  
+.param sg13g2_hv_svaricap_lap   = 0.8
+.param sg13g2_hv_svaricap_toxo  = 1
+
 .include sg13g2_moshv_stat.lib
 .include sg13g2_moshv_mod.lib
-.ENDL mos_tt_stat 
+.ENDL mos_tt_stat
 
-**************** CORNER_LIB OF sg13g2_hv SS MODEL **************** 
+**************** CORNER_LIB OF sg13g2_hv SS MODEL ****************
 * Slow n, Slow p without statistical
 .LIB mos_ss
 .param sg13g2_hv_nmos_vfbo_mm= 1.0
@@ -187,7 +187,7 @@
 .param sg13g2_hv_nmos_cjorbot= 1.0800
 .param sg13g2_hv_nmos_cjorsti= 1.0800
 .param sg13g2_hv_nmos_cjorgat= 1.0800
-  
+
 .param sg13g2_hv_pmos_vfbo_mm= 1.0
 .param sg13g2_hv_pmos_rsgo   = -0.0510
 .param sg13g2_hv_pmos_rsw1   = 1.0000
@@ -207,17 +207,17 @@
 .param sg13g2_hv_pmos_cjorbot= 1.0800
 .param sg13g2_hv_pmos_cjorsti= 1.0800
 .param sg13g2_hv_pmos_cjorgat= 1.0800
-  
-.param sg13g2_hv_svaricap_lap   = 0.6     
-.param sg13g2_hv_svaricap_toxo  = 1.04   
-  
+
+.param sg13g2_hv_svaricap_lap   = 0.6
+.param sg13g2_hv_svaricap_toxo  = 1.04
+
 .include sg13g2_moshv_mod.lib
-.ENDL mos_ss  
-  
-**************** CORNER_LIB OF sg13g2_hv FF MODEL **************** 
+.ENDL mos_ss
+
+**************** CORNER_LIB OF sg13g2_hv FF MODEL ****************
 * Fast n, Fast p without statistical
-.LIB mos_ff  
-  
+.LIB mos_ff
+
 .param sg13g2_hv_nmos_vfbo_mm= 1.0
 .param sg13g2_hv_nmos_rsgo   = 1.0000
 .param sg13g2_hv_nmos_rsw1   = 0.7880
@@ -236,7 +236,7 @@
 .param sg13g2_hv_nmos_cjorbot= 0.9200
 .param sg13g2_hv_nmos_cjorsti= 0.9200
 .param sg13g2_hv_nmos_cjorgat= 0.9200
-  
+
 .param sg13g2_hv_pmos_vfbo_mm= 1.0
 .param sg13g2_hv_pmos_rsgo   = 2.5010
 .param sg13g2_hv_pmos_rsw1   = 1.0000
@@ -256,17 +256,17 @@
 .param sg13g2_hv_pmos_cjorbot= 0.9200
 .param sg13g2_hv_pmos_cjorsti= 0.9200
 .param sg13g2_hv_pmos_cjorgat= 0.9200
-  
-.param sg13g2_hv_svaricap_lap   = 1     
-.param sg13g2_hv_svaricap_toxo  = 0.96  
-  
+
+.param sg13g2_hv_svaricap_lap   = 1
+.param sg13g2_hv_svaricap_toxo  = 0.96
+
 .include sg13g2_moshv_mod.lib
-.ENDL mos_ff  
-  
-**************** CORNER_LIB OF sg13g2_hv SF MODEL **************** 
+.ENDL mos_ff
+
+**************** CORNER_LIB OF sg13g2_hv SF MODEL ****************
 * Slow n, Fast p without statistical
-.LIB mos_sf  
-  
+.LIB mos_sf
+
 .param sg13g2_hv_nmos_vfbo_mm= 1.0
 .param sg13g2_hv_nmos_rsgo   = 1.0000
 .param sg13g2_hv_nmos_rsw1   = 0.7883
@@ -285,7 +285,7 @@
 .param sg13g2_hv_nmos_cjorbot= 1.0400
 .param sg13g2_hv_nmos_cjorsti= 1.0400
 .param sg13g2_hv_nmos_cjorgat= 1.0400
-  
+
 .param sg13g2_hv_pmos_vfbo_mm= 1.0
 .param sg13g2_hv_pmos_rsgo   = 1.8060
 .param sg13g2_hv_pmos_rsw1   = 1.0000
@@ -305,18 +305,18 @@
 .param sg13g2_hv_pmos_cjorbot= 0.9600
 .param sg13g2_hv_pmos_cjorsti= 0.9600
 .param sg13g2_hv_pmos_cjorgat= 0.9600
-  
-.param sg13g2_hv_svaricap_lap   = 0.9     
-.param sg13g2_hv_svaricap_toxo  = 0.98   
-  
-.include sg13g2_moshv_mod.lib
-.ENDL mos_sf  
-  
 
-**************** CORNER_LIB OF sg13g2_hv FS MODEL **************** 
+.param sg13g2_hv_svaricap_lap   = 0.9
+.param sg13g2_hv_svaricap_toxo  = 0.98
+
+.include sg13g2_moshv_mod.lib
+.ENDL mos_sf
+
+
+**************** CORNER_LIB OF sg13g2_hv FS MODEL ****************
 * Fast n, Slow p without statistical
-.LIB mos_fs  
-  
+.LIB mos_fs
+
 .param sg13g2_hv_nmos_vfbo_mm= 1.0
 .param sg13g2_hv_nmos_rsgo   = 1.0000
 .param sg13g2_hv_nmos_rsw1   = 0.7883
@@ -335,7 +335,7 @@
 .param sg13g2_hv_nmos_cjorbot= 0.9600
 .param sg13g2_hv_nmos_cjorsti= 0.9600
 .param sg13g2_hv_nmos_cjorgat= 0.9600
-  
+
 .param sg13g2_hv_pmos_vfbo_mm= 1.0
 .param sg13g2_hv_pmos_rsgo   = 0.5300
 .param sg13g2_hv_pmos_rsw1   = 1.0000
@@ -355,10 +355,9 @@
 .param sg13g2_hv_pmos_cjorbot= 1.0400
 .param sg13g2_hv_pmos_cjorsti= 1.0400
 .param sg13g2_hv_pmos_cjorgat= 1.0400
-  
-.param sg13g2_hv_svaricap_lap   = 0.7     
-.param sg13g2_hv_svaricap_toxo  = 1.02   
-  
+
+.param sg13g2_hv_svaricap_lap   = 0.7
+.param sg13g2_hv_svaricap_toxo  = 1.02
+
 .include sg13g2_moshv_mod.lib
-.ENDL mos_fs  
-  
+.ENDL mos_fs

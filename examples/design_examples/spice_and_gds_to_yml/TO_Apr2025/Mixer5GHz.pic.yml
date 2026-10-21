@@ -1,0 +1,287 @@
+name: circuit
+instances:
+  XM6:
+    component: nmos
+    settings:
+      width: 60.0
+      length: 0.13
+      nf: 10
+      model: sg13_lv_nmos
+  XRL2:
+    component: rppd
+    settings:
+      dx: 4.5
+      dy: 3.2
+      model: rppd
+  XRL1:
+    component: rppd
+    settings:
+      dx: 4.5
+      dy: 3.2
+      model: rppd
+  XM8:
+    component: nmos
+    settings:
+      width: 60.0
+      length: 0.13
+      nf: 10
+      model: sg13_lv_nmos
+  XM7:
+    component: nmos
+    settings:
+      width: 60.0
+      length: 0.13
+      nf: 10
+      model: sg13_lv_nmos
+  XM5:
+    component: nmos
+    settings:
+      width: 60.0
+      length: 0.13
+      nf: 10
+      model: sg13_lv_nmos
+  XM4:
+    component: nmos
+    settings:
+      width: 90.0
+      length: 0.13
+      nf: 15
+      model: sg13_lv_nmos
+  XM3:
+    component: nmos
+    settings:
+      width: 90.0
+      length: 0.13
+      nf: 15
+      model: sg13_lv_nmos
+  XM2:
+    component: nmos
+    settings:
+      width: 120.0
+      length: 0.13
+      nf: 20
+      model: sg13_lv_nmos
+  XM1:
+    component: nmos
+    settings:
+      width: 120.0
+      length: 0.13
+      nf: 20
+      model: sg13_lv_nmos
+  XM11:
+    component: nmos
+    settings:
+      width: 90.0
+      length: 0.13
+      nf: 15
+      model: sg13_lv_nmos
+  XM12:
+    component: nmos
+    settings:
+      width: 90.0
+      length: 0.13
+      nf: 15
+      model: sg13_lv_nmos
+  XM9:
+    component: nmos
+    settings:
+      width: 120.0
+      length: 0.13
+      nf: 20
+      model: sg13_lv_nmos
+  XM10:
+    component: nmos
+    settings:
+      width: 120.0
+      length: 0.13
+      nf: 20
+      model: sg13_lv_nmos
+  XC1:
+    component: cmim
+    settings:
+      width: 11.745
+      length: 9.445
+  XR1:
+    component: rppd
+    settings:
+      dx: 4.4
+      dy: 1.5
+      model: rppd
+  XC2:
+    component: cmim
+    settings:
+      width: 11.745
+      length: 9.445
+  XR2:
+    component: rppd
+    settings:
+      dx: 4.4
+      dy: 1.5
+      model: rppd
+  XM13:
+    component: nmos
+    settings:
+      width: 90.0
+      length: 0.13
+      nf: 15
+      model: sg13_lv_nmos
+  XM14:
+    component: nmos
+    settings:
+      width: 90.0
+      length: 0.13
+      nf: 15
+      model: sg13_lv_nmos
+  XM15:
+    component: nmos
+    settings:
+      width: 120.0
+      length: 0.13
+      nf: 20
+      model: sg13_lv_nmos
+  XM16:
+    component: nmos
+    settings:
+      width: 120.0
+      length: 0.13
+      nf: 20
+      model: sg13_lv_nmos
+  XC3:
+    component: cmim
+    settings:
+      width: 19.1
+      length: 10.7
+  XR3:
+    component: rppd
+    settings:
+      dx: 4.35
+      dy: 1.5
+      model: rppd
+  XC4:
+    component: cmim
+    settings:
+      width: 19.1
+      length: 10.7
+  XR4:
+    component: rppd
+    settings:
+      dx: 4.35
+      dy: 1.5
+      model: rppd
+  L3:
+    component: inductor2
+    settings:
+      inductance: 2.006e-09
+  L1:
+    component: inductor2
+    settings:
+      inductance: 2.006e-09
+  L2:
+    component: inductor2
+    settings:
+      inductance: 2.006e-09
+  L4:
+    component: inductor2
+    settings:
+      inductance: 2.006e-09
+placements:
+  XM6:
+    x: 648.8100000000001
+    y: 1025.98
+  XRL2:
+    x: 678.495
+    y: 1047.705
+    rotation: 180.0
+  XRL1:
+    x: 655.4250000000001
+    y: 1047.705
+    rotation: 180.0
+  XM8:
+    x: 657.61
+    y: 1025.98
+  XM7:
+    x: 666.41
+    y: 1025.98
+  XM5:
+    x: 675.21
+    y: 1025.98
+  XM4:
+    x: 629.46
+    y: 1012.88
+  XM3:
+    x: 651.38
+    y: 1012.88
+  XM2:
+    x: 618.9300000000001
+    y: 998.265
+  XM1:
+    x: 618.9300000000001
+    y: 212.35500000000002
+  XM11:
+    x: 668.98
+    y: 1012.88
+  XM12:
+    x: 611.86
+    y: 1012.88
+  XM9:
+    x: 631.4300000000001
+    y: 998.265
+  XM10:
+    x: 645.9300000000001
+    y: 998.265
+  XC1:
+    x: 637.815
+    y: 1061.795
+  XR1:
+    x: 631.5550000000001
+    y: 1066.895
+    rotation: 180.0
+  XC2:
+    x: 600.445
+    y: 1061.795
+  XR2:
+    x: 622.845
+    y: 1066.895
+    rotation: 180.0
+  XM13:
+    x: 611.86
+    y: 226.97
+  XM14:
+    x: 629.46
+    y: 226.97
+  XM15:
+    x: 658.4300000000001
+    y: 998.265
+  XM16:
+    x: 631.4300000000001
+    y: 212.35500000000002
+  XC3:
+    x: 591.595
+    y: 275.885
+  XR3:
+    x: 622.845
+    y: 280.985
+    rotation: 180.0
+  XC4:
+    x: 639.3050000000001
+    y: 275.885
+  XR4:
+    x: 631.505
+    y: 280.985
+    rotation: 180.0
+  L3:
+    x: 403.98
+    y: 302.435
+    rotation: 180.0
+    mirror: true
+  L1:
+    x: 846.02
+    y: 1088.345
+  L2:
+    x: 403.98
+    y: 1088.345
+    rotation: 180.0
+    mirror: true
+  L4:
+    x: 846.02
+    y: 302.435

@@ -1,14 +1,14 @@
-      
+
 *#######################################################################
 *
 * Copyright 2025 IHP PDK Authors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
-* 
+*
 *    https://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS,
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,14 +31,14 @@
 *
 
 
-.subckt schottky_nbl1 A C S 
+.subckt schottky_nbl1 A C S
 .param
-+l=1E-06  
-+w=3E-07  
-+Nx=1  
-+Ny=1  
-+scaling=1E-06  
-+ls=((Nx*(l+2e-6))/scaling)+0.5  
++l=1E-06
++w=3E-07
++Nx=1
++Ny=1
++scaling=1E-06
++ls=((Nx*(l+2e-6))/scaling)+0.5
 +ws=((Ny*(w+1.7e-6))/scaling)+0.5
 
 dmain 1  C   dmain_mod area = ((Nx*Ny)*(l*w))/(scaling*scaling)
@@ -46,7 +46,7 @@ drev  C  1   drev_mod area = ((Nx*Ny)*(l*w))/(scaling*scaling)
 dsub  S  C   dsub_mod area = (ls*ws)
 Q1    A  C S mod1_pnp area= ((Nx*Ny)*(l*w))/(scaling*scaling)
 
-rsmain A  1   R=(1360)/(Nx*Ny) tc1=2.975e-3 tc2=4.630e-6 
+rsmain A  1   R=(1360)/(Nx*Ny) tc1=2.975e-3 tc2=4.630e-6
 cstray A  C   C=(2.185E-014/25)*(Nx*Ny)
 cin    A  S   C=(5E-016/5)*(Nx)
 cdsub  C  2   C=(1.7E-014/168)*(ls*ws)
@@ -95,7 +95,7 @@ rsub   2  S   R=1E+004
 + af =1.75 )
 
 .model dsub_mod d (
-+ tnom=27  
++ tnom=27
 + is =1.141E-16
 + rs =19700
 + n =1
@@ -110,4 +110,3 @@ rsub   2  S   R=1E+004
 + tcv =-0.00079
 + ibv =1E-15
 + nbv =1 )
-

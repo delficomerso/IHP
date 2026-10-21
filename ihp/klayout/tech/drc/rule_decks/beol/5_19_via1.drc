@@ -41,7 +41,7 @@ if TABLES.include?('via1') || BEOL
   # Rule V1.b: Min. Via1 space is 0.22µm
   logger.info('Executing rule V1.b')
   v1_b_value = drc_rules['V1_b'].to_f
-  v1b_l = via1_nseal.space(v1_b_value.um, euclidian)
+  v1b_l = via1_nseal.space(v1_b_value.um, euclidean)
   v1b_l.output('V1.b', "5.19. V1.b : Min. Via1 space: #{v1_b_value} µm")
   v1b_l.forget
 
@@ -49,7 +49,7 @@ if TABLES.include?('via1') || BEOL
     # Rule V1.c: Min. Metal1 enclosure of Via1 is 0.01 um
     logger.info('Executing rule V1.c')
     v1_c_value = drc_rules['V1_c'].to_f
-    v1_c_l = via1_nseal.enclosed(metal1_drw, v1_c_value.um, euclidian)
+    v1_c_l = via1_nseal.enclosed(metal1_drw, v1_c_value.um, euclidean)
     v1_c_l.output('V1.c', "5.19.  V1.c Min. Metal1 enclosure of Via1 is #{v1_c_value} um")
     v1_c_l.forget
   end

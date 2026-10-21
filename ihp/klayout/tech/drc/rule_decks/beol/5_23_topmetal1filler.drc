@@ -35,7 +35,7 @@ if TABLES.include?('topmetal1filler') || BEOL
   # Rule TM1Fil.c : Min. TopMetal1:filler space to TopMetal1 is 3 um
   logger.info('Executing rule TM1Fil.c')
   tm1fil_c_value = drc_rules['TM1Fil_c'].to_f
-  tm1fil_c_l = topmetal1_drw.sep(topmetal1_filler, tm1fil_c_value.um, euclidian)
+  tm1fil_c_l = topmetal1_drw.sep(topmetal1_filler, tm1fil_c_value.um, euclidean)
   tm1fil_c_l.output('TM1Fil.c', "5.23. TM1Fil.c : Min. TopMetal1:filler space to TopMetal1 is #{tm1fil_c_value} um")
   tm1fil_c_l.forget
 

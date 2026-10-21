@@ -1,22 +1,26 @@
+import base64
 import inspect
 import warnings
 
-from gdsfactory.get_factories import get_cells
+import kwasm.embed
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 from ihp import PDK
-from ihp import cells2 as cells2_module
 from ihp.config import PATH
 from ihp.tech import LAYER_STACK, LAYER_VIEWS
 
+mpl.use("Agg")
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 PDK.activate()
 
-filepath_cells = PATH.repo / "docs" / "cells.rst"
-filepath_fixed = PATH.repo / "docs" / "cells_fixed.rst"
-filepath_cells2 = PATH.repo / "docs" / "cells2_reference.rst"
+filepath_cells = PATH.repo / "docs" / "cells.md"
 filepath_3d = PATH.repo / "docs" / "_static" / "3d"
 filepath_3d.mkdir(parents=True, exist_ok=True)
+
+kwasm_dir = PATH.repo / "docs" / "kwasm"
+gds_dir = kwasm_dir / "gds"
 
 skip = {
     "LIBRARY",
@@ -30,21 +34,6 @@ skip = {
     "dataclasses",
     "library",
     "waveguide_template",
-    # primitives.py — schematic-only VLSIR cells, no GDS geometry
-    "resistor",
-    "capacitor",
-    "inductor",
-    "mos",
-    "diode",
-    "bipolar",
-    "vsource",
-    "isource",
-    "vcvs",
-    "vccs",
-    "cccs",
-    "ccvs",
-    "tline",
-    "subckt",
     # utilities, not cells
     "import_gds",
 }
@@ -53,6 +42,24 @@ skip_plot: tuple[str, ...] = ("",)
 skip_settings: tuple[str, ...] = ("flatten", "safe_cell_names")
 
 cells = PDK.cells
+
+
+def _setup_kwasm_viewer() -> None:
+    gds_dir.mkdir(parents=True, exist_ok=True)
+    viewer_path = kwasm_dir / "viewer.html"
+    if viewer_path.exists():
+        return
+    template = kwasm.embed._read_artifacts()
+    template = template.replace("KWASM_GDS_B64", "")
+    lyp_path = PATH.lyp
+    if lyp_path.exists():
+        lyp_b64 = base64.b64encode(lyp_path.read_bytes()).decode("ascii")
+        template = template.replace("KWASM_LYP_B64", lyp_b64)
+    else:
+        template = template.replace("KWASM_LYP_B64", "")
+    template = template.replace("KWASM_LYRDB_B64", "")
+    template = template.replace("KWASM_NETLIST_B64", "")
+    viewer_path.write_text(template)
 
 
 def make_3d_glb(name, cell_dict):
@@ -96,10 +103,10 @@ def write_cell_entry(f, name, cell_dict, module_path="ihp.cells", import_alias="
         f.write(
             f"""
 
-{name}
-----------------------------------------------------
+## {name}
 
-.. autofunction:: {module_path}.{name}
+
+::: {module_path}.{name}
 
 """
         )
@@ -107,40 +114,63 @@ def write_cell_entry(f, name, cell_dict, module_path="ihp.cells", import_alias="
         f.write(
             f"""
 
-{name}
-----------------------------------------------------
+## {name}
 
-.. autofunction:: {module_path}.{name}
 
-.. plot::
-  :include-source:
-
-  import warnings
-  warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-  from ihp import PDK
-  from ihp import {import_alias}
-
-  PDK.activate()
-
-  c = {import_alias}.{name}({kwargs}).copy()
-  c.draw_ports()
-  c.plot()
+::: {module_path}.{name}
 
 """
         )
 
-        # Generate 3D GLB and embed via shared viewer
+        # Generate 3D GLB before writing tabs
         glb_file = make_3d_glb(name, cell_dict)
-        if glb_file:
+
+        # Write GDS and save PNG for Static/Dynamic/3D tabs
+        try:
+            c = cell_dict[name]()
+            c.write_gds(gds_dir / f"{name}.gds")
+            c.plot()
+            plt.savefig(gds_dir / f"{name}.png")
+            plt.close()
+
+            f.write('=== "Static"\n\n')
+            f.write(f"    ![{name}](kwasm/gds/{name}.png)\n\n")
+            f.write('=== "Dynamic"\n\n')
             f.write(
-                f"""
-.. raw:: html
-
-   <iframe src="_static/3d/viewer.html?file={glb_file}" width="100%" height="500px" frameborder="0" loading="lazy"></iframe>
-
-"""
+                f'    <iframe src="kwasm/viewer.html?url=gds/{name}.gds"'
+                f' loading="lazy" width="100%" height="400"'
+                f' style="border:none"></iframe>\n\n'
             )
+            if glb_file:
+                f.write('=== "3D"\n\n')
+                f.write(
+                    f'    <iframe class="viewer-3d"'
+                    f' src="_static/3d/viewer.html?file={glb_file}"'
+                    f' width="100%" height="500px" frameborder="0"'
+                    f' loading="lazy"></iframe>\n\n'
+                )
+        except Exception as e:
+            print(f"  [kwasm skip] {name}: {e}")
+
+        f.write(
+            f"""```python
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+from ihp import PDK
+from ihp import {import_alias}
+
+PDK.activate()
+
+c = {import_alias}.{name}({kwargs}).copy()
+c.draw_ports()
+c.plot()
+```
+"""
+        )
+
+
+_setup_kwasm_viewer()
 
 
 # Write parametric cells page
@@ -156,54 +186,7 @@ Here are the parametric components available in the PDK.
     )
 
     for name in sorted(cells.keys()):
-        if name in skip or name.startswith("_") or name.endswith("_fixed"):
-            continue
-        print(name)
-        write_cell_entry(f, name, cells, "ihp.cells", "cells")
-
-
-# Write deprecated fixed cells page
-with open(filepath_fixed, "w+") as f:
-    f.write(
-        """
-
-Fixed Cells (Deprecated)
-=============================
-
-.. deprecated:: v0.2.0
-   The fixed-GDS cells below are deprecated. Use the equivalent pure-Python
-   parametric cells from the :doc:`cells` page instead.
-"""
-    )
-
-    for name in sorted(cells.keys()):
-        if name in skip or name.startswith("_") or not name.endswith("_fixed"):
-            continue
-        print(name)
-        write_cell_entry(f, name, cells, "ihp.cells", "cells")
-
-
-# Write cells2 PyCell reference page
-cells2 = get_cells(cells2_module)
-
-with open(filepath_cells2, "w+") as f:
-    f.write(
-        """
-
-PyCell Reference (cells2)
-=============================
-
-These are reference implementations of the IHP SG13G2 PyCells, ported from the
-original CNI (Cadence PyCell) library to GDSFactory. The ``ihp_pycell`` subfolder
-contains the original CNI-based source code.
-
-These cells serve as a validation reference for the primary parametric cells in
-:doc:`cells`. They can also be used directly if needed.
-"""
-    )
-
-    for name in sorted(cells2.keys()):
         if name in skip or name.startswith("_"):
             continue
         print(name)
-        write_cell_entry(f, name, cells2, "ihp.cells2", "cells2")
+        write_cell_entry(f, name, cells, "ihp.cells", "cells")

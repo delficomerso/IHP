@@ -1,7 +1,7 @@
 """XOR fuzz tests: pure GDSFactory transistors vs live PyCell reference.
 
 Generates transistor layouts from both the pure GDSFactory code
-(ihp.cells.transistors) and the PyCell wrappers (ihp.cells2) across a
+(ihp.cells.transistors) and the PyCell wrappers (ihp.refs) across a
 parameter matrix of W/L/NG, then does layer-by-layer kdb.Region XOR
 to verify polygon-exact equivalence.
 """
@@ -14,7 +14,7 @@ import klayout.db as kdb
 import pytest
 
 from ihp import PDK
-from ihp import cells2 as pycell
+from ihp import refs as pycell
 from ihp.cells.fet_transistors import nmos, nmos_hv, pmos, pmos_hv
 from ihp.cells.rf_transistors import rfnmos, rfnmos_hv, rfpmos, rfpmos_hv
 

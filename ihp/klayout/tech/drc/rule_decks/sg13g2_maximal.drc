@@ -584,7 +584,7 @@ class DRC::DRCLayer
 
     def ext_enclosed_at_intersecting_edges(other,
                                            value,
-                                           metric=RBA::Region::Euclidian,
+                                           metric=RBA::Region::Euclidean,
                                            consider_intersecting_edges=false,
                                            consider_touch_points=false,
                                            ignore_non_axis_aligned_edges=false,
@@ -636,7 +636,7 @@ class DRC::DRCLayer
 
     def ext_enclosed(other,
                      value,
-                     metric: @engine.euclidian,
+                     metric: @engine.euclidean,
                      consider_intersecting_edges: true,
                      consider_touch_points: true,
                      consider_overlaps_as_errors: false,
@@ -718,7 +718,7 @@ class DRC::DRCLayer
 
     def ext_separation_at_intersecting_edges(other,
                                              value,
-                                             metric=RBA::Region::Euclidian,
+                                             metric=RBA::Region::Euclidean,
                                              consider_intersecting_edges=false,
                                              consider_touch_points=false,
                                              ignore_non_axis_aligned_edges=false,
@@ -776,7 +776,7 @@ class DRC::DRCLayer
 
     def ext_separation(other,
                        value,
-                       metric: @engine.euclidian,
+                       metric: @engine.euclidean,
                        consider_intersecting_edges: true,
                        consider_touch_points: true,
                        consider_overlaps_as_errors: false,
@@ -883,7 +883,7 @@ class DRC::DRCLayer
 
     def ext_overlap_at_intersecting_edges(other,
                                           value,
-                                          metric=RBA::Region::Euclidian,
+                                          metric=RBA::Region::Euclidean,
                                           consider_intersecting_edges=false,
                                           consider_touch_points=false,
                                           ignore_non_axis_aligned_edges=false,
@@ -935,7 +935,7 @@ class DRC::DRCLayer
 
     def ext_overlap(other,
                     value,
-                    metric: @engine.euclidian,
+                    metric: @engine.euclidean,
                     consider_intersecting_edges: true,
                     consider_touch_points: true,
                     ignore_non_axis_aligned_edges: false,
@@ -1099,7 +1099,7 @@ class DRC::DRCLayer
     end
 
     def ext_space_at_intersecting_edges(value,
-                                        metric=RBA::Region::Euclidian,
+                                        metric=RBA::Region::Euclidean,
                                         consider_intersecting_edges=false,
                                         consider_touch_points=false,
                                         ignore_non_axis_aligned_edges=false,
@@ -1147,7 +1147,7 @@ class DRC::DRCLayer
     end
 
     def ext_space(value,
-                  metric: @engine.euclidian,
+                  metric: @engine.euclidean,
                   consider_intersecting_edges: true,
                   consider_touch_points: true,
                   ignore_non_axis_aligned_edges: false,
@@ -1187,7 +1187,7 @@ class DRC::DRCLayer
     end
 
     def ext_width_at_intersecting_edges(value,
-                  metric=RBA::Region::Euclidian,
+                  metric=RBA::Region::Euclidean,
                   consider_intersecting_edges=false,
                   consider_touch_points=false,
                   ignore_non_axis_aligned_edges=false,
@@ -1235,7 +1235,7 @@ class DRC::DRCLayer
     end
 
     def ext_width(value,
-                  metric: @engine.euclidian,
+                  metric: @engine.euclidean,
                   consider_intersecting_edges: true,
                   consider_touch_points: true,
                   ignore_non_axis_aligned_edges: false,

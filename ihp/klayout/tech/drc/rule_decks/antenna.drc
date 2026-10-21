@@ -419,7 +419,7 @@ diode_presence.forget
 logger.info('Executing rules Ant.b and Ant.e')
 
 # Get the Ant.b/e ratio from the JSON rules
-ant_b_ratio = drc_rules['Ant_b'].to_f 
+ant_b_ratio = drc_rules['Ant_b'].to_f
 ant_e_ratio = drc_rules['Ant_e'].to_f
 
 # Define the cumulative steps
@@ -472,7 +472,7 @@ end
 logger.info('Executing rules Ant.d and Ant.f')
 
 # Get the Ant.d/f ratio from the JSON rules
-ant_d_ratio = drc_rules['Ant_d'].to_f 
+ant_d_ratio = drc_rules['Ant_d'].to_f
 ant_f_ratio = drc_rules['Ant_f'].to_f
 
 # Define the cumulative steps for vias

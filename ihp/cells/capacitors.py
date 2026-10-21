@@ -2,13 +2,17 @@
 
 import gdsfactory as gf
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
 from numpy import floor
 
 from ihp import tech
 from ihp.cells.passives import guard_ring
 from ihp.cells.via_stacks import via_array, via_stack
-from ihp.cells2.ihp_pycell.utility_functions import CbCapCalc
+from ihp.tech import CbCapCalc
+
+_XS = "metal1_routing"
 
 
 def snap_to_grid(p, grid: float = 0.005):
@@ -56,7 +60,7 @@ def cmom_extractor(
     return total_cap * (1 + fringe_field_factor)
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "capacitor", "mom"])
 def cmom(
     nfingers: int = 1,
     length: float = 4.0,
@@ -308,10 +312,48 @@ def cmom(
     c.info["spacing"] = spacing
 
     #   return the component
+    add_electrical_pins(c, port_pin_mapping={"PLUS": ["PLUS"], "MINUS": ["MINUS"]})
     return c
 
 
-@gf.cell
+def cmim_schematic(
+    width: float = 6.0,
+    length: float = 6.0,
+    m: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "MINUS", "side": "left", "type": "electric"},
+        {"name": "PLUS", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "cap_cmim",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerCAP.lib",
+            "sections": ["cap_typ", "cap_bcs", "cap_wcs"],
+            "port_order": ["PLUS", "MINUS"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "m": "m"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "cap_cmim",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerCAP.lib",
+            "sections": ["cap_typ", "cap_bcs", "cap_wcs"],
+            "port_order": ["PLUS", "MINUS"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "m": "m"},
+        },
+    ]
+    s.create_port(name="PLUS", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="MINUS", cross_section=_XS, x=-1, y=0, orientation=180)
+    return s
+
+
+@gf.cell(schematic_function=cmim_schematic, tags=["IHP", "capacitor", "mim"])
 def cmim(
     width: float = 6.0,
     length: float = 6.0,
@@ -330,6 +372,7 @@ def cmim(
     layer_metal5pin: LayerSpec = "Metal5pin",
     layer_topmetal1pin: LayerSpec = "TopMetal1pin",
     model: str = "cmim",
+    m: int = 1,
     **kwargs,
 ) -> Component:
     """Create a MIM (Metal-Insulator-Metal) capacitor.
@@ -337,6 +380,7 @@ def cmim(
     Args:
         width: Width of the capacitor in micrometers.
         length: Length of the capacitor in micrometers.
+        m: Multiplier (number of parallel devices, netlist only).
         bot_enclosure: Bottol Metal5 layer enclosure
         top_enclosure:
         layer_metal5: Metal 5 drawing layer.
@@ -513,7 +557,7 @@ def cmim(
     # fringe_factor = kwargs.get("fringe_factor", 0.355)
     # capacitance = width * length * mim_drc['mim_cap_density']
     # capacitance *= (1+fringe_factor)
-    capacitance = CbCapCalc("C", 0, length * 1e-6, width * 1e-6, model) / 1e-15
+    capacitance = CbCapCalc("C", 0, length, width, model)
 
     c.add_label(
         text=f"C = {capacitance} fF", position=(c.x, c.y - width / 2), layer=layer_text
@@ -525,22 +569,52 @@ def cmim(
     c.info["capacitance_fF"] = capacitance
     c.info["area_um2"] = width * length
 
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": "cap_cmim",
-        "spice_type": "SUBCKT",
-        "spice_lib": "capacitors_mod.lib",
-        "port_order": ["PLUS", "MINUS"],
-        "params": {"w": width * 1e-6, "l": length * 1e-6},
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"MINUS": ["MINUS"], "PLUS": ["PLUS"]})
     return c
 
 
-@gf.cell
+def rfcmim_schematic(
+    width: float = 7.0,
+    length: float = 7.0,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["ports"] = [
+        {"name": "BN", "side": "bottom", "type": "electric"},
+        {"name": "MINUS", "side": "left", "type": "electric"},
+        {"name": "PLUS", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "cap_rfcmim",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerCAP.lib",
+            "sections": ["cap_typ", "cap_bcs", "cap_wcs"],
+            "port_order": ["PLUS", "MINUS", "BN"],
+            "params": {"l": "length * 1e-6", "w": "width * 1e-6"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "cap_rfcmim",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerCAP.lib",
+            "sections": ["cap_typ", "cap_bcs", "cap_wcs"],
+            "port_order": ["PLUS", "MINUS", "BN"],
+            "params": {"l": "length * 1e-6", "w": "width * 1e-6"},
+        },
+    ]
+    s.create_port(name="PLUS", cross_section=_XS, x=1, y=0, orientation=0)
+    s.create_port(name="MINUS", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="BN", cross_section=_XS, x=0, y=-1, orientation=270)
+    return s
+
+
+@gf.cell(schematic_function=rfcmim_schematic, tags=["IHP", "capacitor", "mim", "rf"])
 def rfcmim(
-    width: float = 6.0,
-    length: float = 6.0,
+    width: float = 7.0,
+    length: float = 7.0,
     layer_pwellblock: LayerSpec = "PWellblock",
     layer_metal5: LayerSpec = "Metal5drawing",
     layer_mim: LayerSpec = "MIMdrawing",
@@ -633,6 +707,7 @@ def rfcmim(
         model=model,
     )
     c.info = cap.info
+    c.info["model"] = "cap_rfcmim"
     c.add_ref(cap)
     c.ports = cap.ports
     # add pwell block
@@ -715,50 +790,8 @@ def rfcmim(
     c.add_label(text="TIE_LOW", position=(tie.x, tie.y), layer=layer_metal1label)
     c.add_label(text="TIE_LOW", position=(tie.x, tie.y), layer=layer_text)
 
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": "cap_rfcmim",
-        "spice_type": "SUBCKT",
-        "spice_lib": "capacitors_mod.lib",
-        "port_order": ["PLUS", "MINUS", "bn"],
-        "port_map": {"PLUS": "PLUS", "MINUS": "MINUS"},
-        "params": {"l": length * 1e-6, "w": width * 1e-6},
-    }
-
+    add_electrical_pins(
+        c,
+        port_pin_mapping={"MINUS": ["MINUS"], "PLUS": ["PLUS"], "TIE_LOW": ["TIE_LOW"]},
+    )
     return c
-
-
-if __name__ == "__main__":
-    from math import isclose
-
-    # capacitance in femto farad
-
-    c = cmom(nfingers=2)
-    assert isclose(c.info["capacitance"], 3.8016)
-    c.show()
-
-    c2 = cmom(nfingers=4)
-    assert c2.info["capacitance"] >= 2 * c.info["capacitance"]
-    assert isclose(c2.info["capacitance"], 7.5733)
-    c2.show()
-
-
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK, cells2
-
-    PDK.activate()
-
-    # Test the components
-    c0 = cells2.cmim()  # original
-    c1 = cmim()  # New
-    # c = gf.grid([c0, c1], spacing=100)
-    c = xor(c0, c1)
-    c.show()
-
-    # c0 = fixed.rfcmim()  # original
-    # c1 = rfcmim()  # New
-    # # c = gf.grid([c0, c1], spacing=100)
-    # c = xor(c0, c1)
-    # c.show()

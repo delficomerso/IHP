@@ -39,7 +39,7 @@ if TABLES.include?('copperpillar') || BEOL
   # Rule Padc.b : Min. CuPillarPad space is 40 um
   logger.info('Executing rule Padc.b')
   padc_b_value = drc_rules['Padc_b'].to_f
-  padc_b = cu_pillarpad.space(padc_b_value.um, euclidian)
+  padc_b = cu_pillarpad.space(padc_b_value.um, euclidean)
   padc_b.output('Padc.b', "6.9. Padc.b : Min. CuPillarPad space is #{padc_b_value} um")
   padc_b.forget
 

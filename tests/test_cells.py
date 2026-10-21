@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import inspect
 import pathlib
 
 import gdsfactory as gf
+import jax.numpy as jnp
 import jsondiff
 import numpy as np
 import pytest
@@ -13,7 +15,6 @@ from pytest_regressions.data_regression import DataRegressionFixture
 from pytest_regressions.ndarrays_regression import NDArraysRegressionFixture
 
 from ihp import PDK
-from ihp.models.to_vlsir import to_proto, to_spice, validate_vlsir_metadata
 
 
 @pytest.fixture(autouse=True)
@@ -93,7 +94,29 @@ def test_gds(component_name: str) -> None:
 def test_settings(component_name: str, data_regression: DataRegressionFixture) -> None:
     """Avoid regressions when exporting settings."""
     component = cells[component_name]()
-    data_regression.check(component.to_dict())
+    data_regression.check(component.to_dict(with_ports=True))
+
+
+MANHATTAN_ORIENTATIONS = (0.0, 90.0, 180.0, 270.0)
+
+skip_test_manhattan_ports: set[str] = set()
+
+
+@pytest.mark.parametrize("component_name", cell_names)
+def test_port_orientations_manhattan(component_name: str) -> None:
+    """Ensure that all ports have a manhattan orientation (0, 90, 180 or 270 deg)."""
+    if component_name in skip_test_manhattan_ports:
+        pytest.skip(f"Skipping manhattan port orientation test for {component_name}")
+    component = cells[component_name]()
+    if isinstance(component, gf.ComponentAllAngle):
+        pytest.skip(f"{component_name} is an all-angle component")
+    for port in component.ports:
+        orientation = port.orientation % 360
+        if not np.any(np.isclose(orientation, MANHATTAN_ORIENTATIONS, atol=1e-3)):
+            raise AssertionError(
+                f"Port {port.name} of {component_name} has non-manhattan "
+                f"orientation {port.orientation} degrees."
+            )
 
 
 skip_test_models = {}
@@ -110,17 +133,16 @@ model_names = sorted(
 
 
 @pytest.mark.parametrize("model_name", model_names)
-def test_models_with_wavelength_sweep(
+def test_models_with_frequency_sweep(
     model_name: str, ndarrays_regression: NDArraysRegressionFixture
 ) -> None:
-    """Test models with different wavelengths to avoid regressions in frequency response."""
-    # Test at different wavelengths
-    wl = [1.53, 1.55, 1.57]
-    try:
-        model = models[model_name]
-        s_params = model(wl=wl)
-    except TypeError:
-        pytest.skip(f"{model_name} does not accept a wl argument")
+    """Test models at different frequencies to avoid regressions in frequency response."""
+    model = models[model_name]
+    if "f" not in inspect.signature(getattr(model, "__wrapped__", model)).parameters:
+        pytest.skip(f"{model_name} does not accept an f argument")
+
+    f = jnp.array([1e9, 5e9, 10e9])
+    s_params = model(f=f)
 
     # Convert s_params dictionary to arrays for regression testing
     # s_params is a dict with tuple keys (port pairs) and JAX array values
@@ -138,178 +160,6 @@ def test_models_with_wavelength_sweep(
         arrays_to_check,
         default_tolerance={"atol": 1e-2, "rtol": 1e-2},
     )
-
-
-@pytest.mark.parametrize("component_name", cell_names)
-def test_vlsir_to_proto(component_name: str) -> None:
-    """Test to_proto for cells with vlsir metadata."""
-    component = cells[component_name]()
-
-    if "vlsir" not in component.info:
-        pytest.skip(f"{component_name} does not have vlsir metadata")
-
-    pkg = to_proto(component, domain="ihp.sg13g2")
-
-    # Verify we got a valid package with one external module
-    assert len(pkg.ext_modules) == 1
-    ext_mod = pkg.ext_modules[0]
-
-    # Verify the external module has the expected model name
-    vlsir_info = component.info["vlsir"]
-    assert ext_mod.name.name == vlsir_info["model"]
-
-    # Verify ports match port_order
-    port_names = [p.signal for p in ext_mod.ports]
-    assert port_names == vlsir_info["port_order"]
-
-
-@pytest.mark.parametrize("component_name", cell_names)
-def test_vlsir_to_spice(component_name: str) -> None:
-    """Test to_spice for cells with vlsir metadata."""
-    component = cells[component_name]()
-
-    if "vlsir" not in component.info:
-        pytest.skip(f"{component_name} does not have vlsir metadata")
-
-    netlist = to_spice(component, domain="ihp.sg13g2", fmt="spice")
-
-    # Verify we got a non-empty netlist string
-    assert isinstance(netlist, str)
-    assert len(netlist) > 0
-
-
-class TestVlsirValidationErrors:
-    """Test error handling for invalid vlsir metadata."""
-
-    def test_missing_vlsir_metadata(self) -> None:
-        """Test that missing vlsir metadata raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-
-        with pytest.raises(ValueError, match="missing required 'vlsir' metadata"):
-            validate_vlsir_metadata(c)
-
-    def test_missing_model_field(self) -> None:
-        """Test that missing 'model' field raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "spice_type": "RESISTOR",
-            "port_order": ["p"],
-        }
-
-        with pytest.raises(ValueError, match="missing required fields.*model"):
-            validate_vlsir_metadata(c)
-
-    def test_missing_spice_type_field(self) -> None:
-        """Test that missing 'spice_type' field raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "rpoly",
-            "port_order": ["p"],
-        }
-
-        with pytest.raises(ValueError, match="missing required fields.*spice_type"):
-            validate_vlsir_metadata(c)
-
-    def test_missing_port_order_field(self) -> None:
-        """Test that missing 'port_order' field raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "rpoly",
-            "spice_type": "RESISTOR",
-        }
-
-        with pytest.raises(ValueError, match="missing required fields.*port_order"):
-            validate_vlsir_metadata(c)
-
-    def test_unsupported_spice_type(self) -> None:
-        """Test that unsupported spice_type raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "rpoly",
-            "spice_type": "INVALID_TYPE",
-            "port_order": ["p"],
-        }
-
-        with pytest.raises(ValueError, match="unknown spice_type 'INVALID_TYPE'"):
-            validate_vlsir_metadata(c)
-
-    def test_port_order_not_on_component(self) -> None:
-        """Test that port_order with non-existent ports raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "rpoly",
-            "spice_type": "RESISTOR",
-            "port_order": ["p", "n"],  # 'n' does not exist
-        }
-
-        with pytest.raises(ValueError, match="port_order contains ports not found"):
-            validate_vlsir_metadata(c)
-
-    def test_empty_port_order(self) -> None:
-        """Test that empty port_order raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "rpoly",
-            "spice_type": "RESISTOR",
-            "port_order": [],
-        }
-
-        with pytest.raises(ValueError, match="port_order must be a non-empty list"):
-            validate_vlsir_metadata(c)
-
-    def test_port_map_valid(self) -> None:
-        """Test that valid port_map passes validation."""
-        c = gf.Component()
-        c.add_port(name="D", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.add_port(name="G", center=(1, 0), width=0.1, orientation=0, layer=(1, 0))
-        c.add_port(name="S", center=(2, 0), width=0.1, orientation=0, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "nmos",
-            "spice_type": "MOS",
-            "port_order": ["d", "g", "s", "b"],  # VLSIR/SPICE port names
-            "port_map": {"D": "d", "G": "g", "S": "s"},  # Component -> VLSIR mapping
-        }
-
-        # Should not raise
-        result = validate_vlsir_metadata(c)
-        assert result["port_map"] == {"D": "d", "G": "g", "S": "s"}
-
-    def test_port_map_invalid_component_port(self) -> None:
-        """Test that port_map with non-existent component port raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="D", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "nmos",
-            "spice_type": "MOS",
-            "port_order": ["d", "g"],
-            "port_map": {"D": "d", "X": "g"},  # 'X' doesn't exist on component
-        }
-
-        with pytest.raises(
-            ValueError, match="port_map contains component ports not found.*X"
-        ):
-            validate_vlsir_metadata(c)
-
-    def test_port_map_not_dict(self) -> None:
-        """Test that non-dict port_map raises ValueError."""
-        c = gf.Component()
-        c.add_port(name="p", center=(0, 0), width=0.1, orientation=180, layer=(1, 0))
-        c.info["vlsir"] = {
-            "model": "rpoly",
-            "spice_type": "RESISTOR",
-            "port_order": ["p"],
-            "port_map": ["p"],  # Should be a dict
-        }
-
-        with pytest.raises(ValueError, match="port_map must be a dict"):
-            validate_vlsir_metadata(c)
 
 
 if __name__ == "__main__":

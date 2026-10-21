@@ -1,21 +1,33 @@
-info:
-  vlsir:
-    model: npn13G2v
-    params:
-      le: 0.0
-      we: 0.0
-    port_map:
-      B: b
-      C: c
-      E: e
-    port_order:
-    - c
-    - b
-    - e
-    - bn
-    spice_lib: sg13g2_hbt_mod.lib
-    spice_type: SUBCKT
+info: {}
 name: npn13G2V_EL1_EW0p12_N1
+ports:
+  B:
+    center:
+    - 3.87
+    - 1.775
+    layer: Metal1pin
+    name: B
+    orientation: 180
+    port_type: electrical
+    width: 0.65
+  C:
+    center:
+    - 3.87
+    - 5.425
+    layer: Metal1pin
+    name: C
+    orientation: 180
+    port_type: electrical
+    width: 0.65
+  E:
+    center:
+    - 3.87
+    - 3.6
+    layer: Metal2pin
+    name: E
+    orientation: 180
+    port_type: electrical
+    width: 1.4
 settings:
   Nx: 1
   emitter_length: 1

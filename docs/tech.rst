@@ -123,10 +123,6 @@ auto-routing:
      - Metal bundle routing with bends (``bend_metal``)
    * - ``route_bundle_metal_corner``
      - Metal bundle routing with 90-degree corners (``wire_corner``)
-   * - ``route_astar``
-     - A* pathfinding on TopMetal2 with euler bends
-   * - ``route_astar_metal``
-     - A* pathfinding on TopMetal2 with wire corners
 
 Connectivity
 ------------

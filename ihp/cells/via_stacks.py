@@ -2,6 +2,7 @@
 
 import gdsfactory as gf
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
 
 # Via design rules (in micrometers)
@@ -61,6 +62,7 @@ def get_via_name(bottom_metal: str, top_metal: str) -> str | None:
     """
     via_mapping = {
         ("Activ", "Metal1"): "Cont",
+        ("GatPoly", "Metal1"): "Cont",
         ("Metal1", "Metal2"): "Via1",
         ("Metal2", "Metal3"): "Via2",
         ("Metal3", "Metal4"): "Via3",
@@ -75,7 +77,7 @@ def get_via_name(bottom_metal: str, top_metal: str) -> str | None:
     return None
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "via", "array"])
 def via_array(
     via_type: str = "Via1",
     columns: int = 2,
@@ -163,10 +165,11 @@ def via_array(
     c.info["enclosure_width"] = array_width + 2 * enclosure
     c.info["enclosure_height"] = array_height + 2 * enclosure
 
+    add_electrical_pins(c, port_pin_mapping={})
     return c
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "via", "stack"])
 def via_stack(
     bottom_layer: str = "Metal1",
     top_layer: str = "Metal2",
@@ -177,6 +180,8 @@ def via_stack(
     vt1_rows: int = 1,
     vt2_columns: int = 1,
     vt2_rows: int = 1,
+    layer_activ: LayerSpec = "Activdrawing",
+    layer_gatpoly: LayerSpec = "GatPolydrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
     layer_metal2: LayerSpec = "Metal2drawing",
     layer_metal3: LayerSpec = "Metal3drawing",
@@ -184,6 +189,8 @@ def via_stack(
     layer_metal5: LayerSpec = "Metal5drawing",
     layer_topmetal1: LayerSpec = "TopMetal1drawing",
     layer_topmetal2: LayerSpec = "TopMetal2drawing",
+    layer_activ_pin: LayerSpec = "Activpin",
+    layer_gatpoly_pin: LayerSpec = "GatPolypin",
     layer_metal1_pin: LayerSpec = "Metal1pin",
     layer_metal2_pin: LayerSpec = "Metal2pin",
     layer_metal3_pin: LayerSpec = "Metal3pin",
@@ -191,6 +198,7 @@ def via_stack(
     layer_metal5_pin: LayerSpec = "Metal5pin",
     layer_topmetal1_pin: LayerSpec = "TopMetal1pin",
     layer_topmetal2_pin: LayerSpec = "TopMetal2pin",
+    layer_cont: LayerSpec = "Contdrawing",
     layer_via1: LayerSpec = "Via1drawing",
     layer_via2: LayerSpec = "Via2drawing",
     layer_via3: LayerSpec = "Via3drawing",
@@ -200,37 +208,44 @@ def via_stack(
 ) -> Component:
     """Create a via stack connecting multiple metal layers.
 
+    bottom_layer can be Activ, GatPoly, or any metal (Metal1-TopMetal2).
+    Activ and GatPoly connect to Metal1 through Cont; they are independent
+    paths and must not appear together in the same stack.
+
     Args:
-        bottom_layer: Bottom metal layer name.
-        top_layer: Top metal layer name.
+        bottom_layer: Bottom layer name (Activ, GatPoly, or Metal1-TopMetal2).
+        top_layer: Top metal layer name (Metal1-TopMetal2).
         size: Size of the metal stack (width, height) in micrometers.
-        vn_columns: Number of columns for normal vias (Via1-Via4).
+        vn_columns: Number of columns for normal vias (Cont, Via1-Via4).
         vn_rows: Number of rows for normal vias.
         vt1_columns: Number of columns for TopVia1.
         vt1_rows: Number of rows for TopVia1.
         vt2_columns: Number of columns for TopVia2.
         vt2_rows: Number of rows for TopVia2.
-        layer_metal1: Metal1 layer.
-        layer_metal2: Metal2 layer.
-        layer_metal3: Metal3 layer.
-        layer_metal4: Metal4 layer.
-        layer_metal5: Metal5 layer.
-        layer_topmetal1: TopMetal1 layer.
-        layer_topmetal2: TopMetal2 layer.
-        layer_via1: Via1 layer.
-        layer_via2: Via2 layer.
-        layer_via3: Via3 layer.
-        layer_via4: Via4 layer.
-        layer_topvia1: TopVia1 layer.
-        layer_topvia2: TopVia2 layer.
 
     Returns:
         Component with via stack.
     """
     c = Component()
 
-    # Map metal names to layer parameters
-    metal_layer_map = {
+    # BEOL metal stack (Metal1 and above)
+    _beol_order = [
+        "Metal1",
+        "Metal2",
+        "Metal3",
+        "Metal4",
+        "Metal5",
+        "TopMetal1",
+        "TopMetal2",
+    ]
+
+    # Sub-Metal1 layers that connect to Metal1 via Cont
+    _sub_metal1 = {"Activ", "GatPoly"}
+
+    # Map layer names to layer parameters
+    layer_map = {
+        "Activ": layer_activ,
+        "GatPoly": layer_gatpoly,
         "Metal1": layer_metal1,
         "Metal2": layer_metal2,
         "Metal3": layer_metal3,
@@ -241,6 +256,8 @@ def via_stack(
     }
 
     pin_layer_map = {
+        "Activ": layer_activ_pin,
+        "GatPoly": layer_gatpoly_pin,
         "Metal1": layer_metal1_pin,
         "Metal2": layer_metal2_pin,
         "Metal3": layer_metal3_pin,
@@ -250,134 +267,155 @@ def via_stack(
         "TopMetal2": layer_topmetal2_pin,
     }
 
-    # Validate layers
-    metal_order = [
-        "Metal1",
-        "Metal2",
-        "Metal3",
-        "Metal4",
-        "Metal5",
-        "TopMetal1",
-        "TopMetal2",
-    ]
+    # Normalize layer names (case-insensitive match against known names)
+    _all_names = {n.lower(): n for n in _beol_order + list(_sub_metal1)}
+    bottom_port_label = bottom_layer
+    top_port_label = top_layer
+    bottom_layer = _all_names.get(bottom_layer.lower(), bottom_layer)
+    top_layer = _all_names.get(top_layer.lower(), top_layer)
 
-    if bottom_layer not in metal_order or top_layer not in metal_order:
-        raise ValueError(f"Invalid metal layers: {bottom_layer}, {top_layer}")
-
-    bottom_idx = metal_order.index(bottom_layer)
-    top_idx = metal_order.index(top_layer)
-
-    if bottom_idx >= top_idx:
-        raise ValueError(
-            f"Bottom layer must be below top layer: {bottom_layer} -> {top_layer}"
-        )
+    # Build effective layer order based on bottom_layer
+    if bottom_layer in _sub_metal1:
+        # Activ or GatPoly -> Cont -> Metal1 -> ... -> top_layer
+        if top_layer in _sub_metal1:
+            raise ValueError(
+                f"Cannot stack between two sub-Metal1 layers: "
+                f"{bottom_layer} -> {top_layer}"
+            )
+        if top_layer not in _beol_order:
+            raise ValueError(f"Invalid top layer: {top_layer}")
+        top_idx = _beol_order.index(top_layer)
+        layer_order = [bottom_layer] + _beol_order[: top_idx + 1]
+    else:
+        if bottom_layer not in _beol_order:
+            raise ValueError(f"Invalid bottom layer: {bottom_layer}")
+        if top_layer not in _beol_order:
+            raise ValueError(f"Invalid top layer: {top_layer}")
+        bottom_idx = _beol_order.index(bottom_layer)
+        top_idx = _beol_order.index(top_layer)
+        if bottom_idx > top_idx:
+            raise ValueError(
+                f"Bottom layer must be below top layer: {bottom_layer} -> {top_layer}"
+            )
+        layer_order = _beol_order[bottom_idx : top_idx + 1]
 
     width, height = size
 
-    # Add metal layers
-    for idx in range(bottom_idx, top_idx + 1):
-        metal_name = metal_order[idx]
-        metal_layer = metal_layer_map[metal_name]
-
+    # Add conductor layers
+    for name in layer_order:
         metal = gf.components.rectangle(
             size=(width, height),
-            layer=metal_layer,
+            layer=layer_map[name],
             centered=True,
         )
         c.add_ref(metal)
 
-    # Add vias between layers
-    for idx in range(bottom_idx, top_idx):
-        bottom_metal = metal_order[idx]
-        top_metal = metal_order[idx + 1]
-        via_name = get_via_name(bottom_metal, top_metal)
+    # Add vias between adjacent layers
+    for i in range(len(layer_order) - 1):
+        bot = layer_order[i]
+        top = layer_order[i + 1]
+        via_name = get_via_name(bot, top)
 
-        if via_name:
-            rules = VIA_RULES[via_name]
-            via_size = rules["size"]
-            via_spacing = rules["spacing"]
-            via_enclosure = rules["enclosure"]
+        if via_name is None:
+            continue
 
-            # Determine number of vias based on type
-            if "TopVia" in via_name:
-                if via_name == "TopVia1":
-                    columns = vt1_columns
-                    rows = vt1_rows
-                else:  # TopVia2
-                    columns = vt2_columns
-                    rows = vt2_rows
-            else:
-                columns = vn_columns
-                rows = vn_rows
+        rules = VIA_RULES[via_name]
+        via_size = rules["size"]
+        via_spacing = rules["spacing"]
+        via_enclosure = rules["enclosure"]
 
-            # Calculate maximum number of vias that fit
-            max_columns = int((width - 2 * via_enclosure - via_size) / via_spacing) + 1
-            max_rows = int((height - 2 * via_enclosure - via_size) / via_spacing) + 1
+        # Determine number of vias based on type
+        if via_name == "TopVia1":
+            columns = vt1_columns
+            rows = vt1_rows
+        elif via_name == "TopVia2":
+            columns = vt2_columns
+            rows = vt2_rows
+        else:
+            columns = vn_columns
+            rows = vn_rows
 
-            # Use minimum of requested and maximum
-            actual_columns = min(columns, max_columns)
-            actual_rows = min(rows, max_rows)
+        # Calculate maximum number of vias that fit
+        max_columns = int((width - 2 * via_enclosure - via_size) / via_spacing) + 1
+        max_rows = int((height - 2 * via_enclosure - via_size) / via_spacing) + 1
 
-            if actual_columns > 0 and actual_rows > 0:
-                # Create via array
-                via_array_comp = via_array(
-                    via_type=via_name,
-                    columns=actual_columns,
-                    rows=actual_rows,
-                    via_size=via_size,
-                    via_spacing=via_spacing,
-                    via_enclosure=via_enclosure,
-                    layer_via1=layer_via1,
-                    layer_via2=layer_via2,
-                    layer_via3=layer_via3,
-                    layer_via4=layer_via4,
-                    layer_topvia1=layer_topvia1,
-                    layer_topvia2=layer_topvia2,
-                )
+        # Use minimum of requested and maximum
+        actual_columns = min(columns, max_columns)
+        actual_rows = min(rows, max_rows)
 
-                # Center the via array
-                array_width = via_array_comp.info["array_width"]
-                array_height = via_array_comp.info["array_height"]
+        if actual_columns > 0 and actual_rows > 0:
+            via_array_comp = via_array(
+                via_type=via_name,
+                columns=actual_columns,
+                rows=actual_rows,
+                via_size=via_size,
+                via_spacing=via_spacing,
+                via_enclosure=via_enclosure,
+                layer_cont=layer_cont,
+                layer_via1=layer_via1,
+                layer_via2=layer_via2,
+                layer_via3=layer_via3,
+                layer_via4=layer_via4,
+                layer_topvia1=layer_topvia1,
+                layer_topvia2=layer_topvia2,
+            )
 
-                via_ref = c.add_ref(via_array_comp)
-                via_ref.move((-array_width / 2, -array_height / 2))
+            # Center the via array
+            array_width = via_array_comp.info["array_width"]
+            array_height = via_array_comp.info["array_height"]
 
-    # Add ports
-    c.add_port(
-        name="bottom",
-        center=(0, 0),
-        width=width,
-        orientation=0,
-        layer=pin_layer_map[bottom_layer],
-        port_type="electrical",
-    )
+            via_ref = c.add_ref(via_array_comp)
+            via_ref.move((-array_width / 2, -array_height / 2))
 
-    c.add_port(
-        name="top",
-        center=(0, 0),
-        width=width,
-        orientation=0,
-        layer=pin_layer_map[top_layer],
-        port_type="electrical",
-    )
+    # Add directional ports per layer (N/S/E/W at bbox edges)
+    hx = width / 2
+    hy = height / 2
+    _port_specs = {
+        "N": ((0, hy), 90, width),
+        "S": ((0, -hy), 270, width),
+        "E": ((hx, 0), 0, height),
+        "W": ((-hx, 0), 180, height),
+    }
+    _port_layers = [(bottom_layer, bottom_port_label)]
+    if top_layer != bottom_layer or top_port_label != bottom_port_label:
+        _port_layers.append((top_layer, top_port_label))
+    for layer_name, port_label in _port_layers:
+        pin_layer = pin_layer_map[layer_name]
+        for direction, (center, orientation, port_width) in _port_specs.items():
+            c.add_port(
+                name=f"{port_label}_{direction}",
+                center=center,
+                width=port_width,
+                orientation=orientation,
+                layer=pin_layer,
+                port_type="electrical",
+            )
 
     # Add metadata
     c.info["bottom_layer"] = bottom_layer
     c.info["top_layer"] = top_layer
     c.info["width"] = width
     c.info["height"] = height
-    c.info["n_layers"] = top_idx - bottom_idx + 1
+    c.info["n_layers"] = len(layer_order)
 
+    add_electrical_pins(
+        c,
+        port_pin_mapping={
+            p.name: [p.name] for p in c.ports if p.port_type == "electrical"
+        },
+    )
     return c
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "via", "stack"])
 def via_stack_with_pads(
     bottom_layer: str = "Metal1",
     top_layer: str = "TopMetal2",
     size: tuple[float, float] = (10.0, 10.0),
     pad_size: tuple[float, float] = (20.0, 20.0),
     pad_spacing: float = 50.0,
+    layer_activ: LayerSpec = "Activdrawing",
+    layer_gatpoly: LayerSpec = "GatPolydrawing",
     layer_metal1: LayerSpec = "Metal1drawing",
     layer_metal2: LayerSpec = "Metal2drawing",
     layer_metal3: LayerSpec = "Metal3drawing",
@@ -385,6 +423,8 @@ def via_stack_with_pads(
     layer_metal5: LayerSpec = "Metal5drawing",
     layer_topmetal1: LayerSpec = "TopMetal1drawing",
     layer_topmetal2: LayerSpec = "TopMetal2drawing",
+    layer_activ_pin: LayerSpec = "Activpin",
+    layer_gatpoly_pin: LayerSpec = "GatPolypin",
     layer_metal1_pin: LayerSpec = "Metal1pin",
     layer_metal2_pin: LayerSpec = "Metal2pin",
     layer_metal3_pin: LayerSpec = "Metal3pin",
@@ -392,6 +432,7 @@ def via_stack_with_pads(
     layer_metal5_pin: LayerSpec = "Metal5pin",
     layer_topmetal1_pin: LayerSpec = "TopMetal1pin",
     layer_topmetal2_pin: LayerSpec = "TopMetal2pin",
+    layer_cont: LayerSpec = "Contdrawing",
     layer_via1: LayerSpec = "Via1drawing",
     layer_via2: LayerSpec = "Via2drawing",
     layer_via3: LayerSpec = "Via3drawing",
@@ -402,32 +443,21 @@ def via_stack_with_pads(
     """Create a via stack with test pads.
 
     Args:
-        bottom_layer: Bottom metal layer name.
-        top_layer: Top metal layer name.
+        bottom_layer: Bottom layer name (Activ, GatPoly, or Metal1-TopMetal2).
+        top_layer: Top metal layer name (Metal1-TopMetal2).
         size: Size of the via stack (width, height) in micrometers.
         pad_size: Size of the test pads (width, height) in micrometers.
         pad_spacing: Spacing between pads in micrometers.
-        layer_metal1: Metal1 layer.
-        layer_metal2: Metal2 layer.
-        layer_metal3: Metal3 layer.
-        layer_metal4: Metal4 layer.
-        layer_metal5: Metal5 layer.
-        layer_topmetal1: TopMetal1 layer.
-        layer_topmetal2: TopMetal2 layer.
-        layer_via1: Via1 layer.
-        layer_via2: Via2 layer.
-        layer_via3: Via3 layer.
-        layer_via4: Via4 layer.
-        layer_topvia1: TopVia1 layer.
-        layer_topvia2: TopVia2 layer.
 
     Returns:
         Component with via stack and test pads.
     """
     c = Component()
 
-    # Map metal names to layer parameters
-    metal_layer_map = {
+    # Map layer names to layer parameters
+    layer_map = {
+        "Activ": layer_activ,
+        "GatPoly": layer_gatpoly,
         "Metal1": layer_metal1,
         "Metal2": layer_metal2,
         "Metal3": layer_metal3,
@@ -438,6 +468,8 @@ def via_stack_with_pads(
     }
 
     pin_layer_map = {
+        "Activ": layer_activ_pin,
+        "GatPoly": layer_gatpoly_pin,
         "Metal1": layer_metal1_pin,
         "Metal2": layer_metal2_pin,
         "Metal3": layer_metal3_pin,
@@ -452,6 +484,8 @@ def via_stack_with_pads(
         bottom_layer=bottom_layer,
         top_layer=top_layer,
         size=size,
+        layer_activ=layer_activ,
+        layer_gatpoly=layer_gatpoly,
         layer_metal1=layer_metal1,
         layer_metal2=layer_metal2,
         layer_metal3=layer_metal3,
@@ -459,6 +493,8 @@ def via_stack_with_pads(
         layer_metal5=layer_metal5,
         layer_topmetal1=layer_topmetal1,
         layer_topmetal2=layer_topmetal2,
+        layer_activ_pin=layer_activ_pin,
+        layer_gatpoly_pin=layer_gatpoly_pin,
         layer_metal1_pin=layer_metal1_pin,
         layer_metal2_pin=layer_metal2_pin,
         layer_metal3_pin=layer_metal3_pin,
@@ -466,6 +502,7 @@ def via_stack_with_pads(
         layer_metal5_pin=layer_metal5_pin,
         layer_topmetal1_pin=layer_topmetal1_pin,
         layer_topmetal2_pin=layer_topmetal2_pin,
+        layer_cont=layer_cont,
         layer_via1=layer_via1,
         layer_via2=layer_via2,
         layer_via3=layer_via3,
@@ -478,7 +515,7 @@ def via_stack_with_pads(
     # Add bottom pad
     bottom_pad = gf.components.rectangle(
         size=pad_size,
-        layer=metal_layer_map[bottom_layer],
+        layer=layer_map[bottom_layer],
         centered=True,
     )
     bottom_pad_ref = c.add_ref(bottom_pad)
@@ -487,7 +524,7 @@ def via_stack_with_pads(
     # Add top pad
     top_pad = gf.components.rectangle(
         size=pad_size,
-        layer=metal_layer_map[top_layer],
+        layer=layer_map[top_layer],
         centered=True,
     )
     top_pad_ref = c.add_ref(top_pad)
@@ -496,14 +533,14 @@ def via_stack_with_pads(
     # Connect pads to stack
     bottom_trace = gf.components.rectangle(
         size=(pad_spacing / 2 - size[0] / 2, 2.0),
-        layer=metal_layer_map[bottom_layer],
+        layer=layer_map[bottom_layer],
     )
     bottom_trace_ref = c.add_ref(bottom_trace)
     bottom_trace_ref.move((-pad_spacing / 2, -1.0))
 
     top_trace = gf.components.rectangle(
         size=(pad_spacing / 2 - size[0] / 2, 2.0),
-        layer=metal_layer_map[top_layer],
+        layer=layer_map[top_layer],
     )
     top_trace_ref = c.add_ref(top_trace)
     top_trace_ref.move((size[0] / 2, -1.0))
@@ -527,31 +564,5 @@ def via_stack_with_pads(
         port_type="electrical",
     )
 
+    add_electrical_pins(c, port_pin_mapping={"pad1": ["pad1"], "pad2": ["pad2"]})
     return c
-
-
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK, cells
-
-    PDK.activate()
-
-    # Test the components
-    # Note: via_array is not in cells, so we'll test via_stack
-    # c0 = cells.via_array()  # original
-    # c1 = via_array()  # New
-    # # c = gf.grid([c0, c1], spacing=100)
-    # c = xor(c0, c1)
-    # c.show()
-
-    c0 = cells.ViaStack()  # original
-    c1 = via_stack()  # New
-    c = xor(c0, c1)
-    c.show()
-
-    # c0 = cells.via_stack_with_pads()  # original
-    # c1 = via_stack_with_pads()  # New
-    # # c = gf.grid([c0, c1], spacing=100)
-    # c = xor(c0, c1)
-    # c.show()

@@ -5,7 +5,13 @@ from typing import Literal
 
 import gdsfactory as gf
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
+
+from ..config import PATH
+
+_XS = "metal1_routing"
 
 
 def regular_octagon_points(diameter: float):
@@ -22,7 +28,49 @@ def regular_octagon_points(diameter: float):
     ]
 
 
-@gf.cell
+def bondpad_schematic(
+    shape: Literal["octagon", "square", "circle"] = "octagon",
+    diameter: float = 80.0,
+) -> DSchematic:
+    _shape_map = {"octagon": 0, "square": 1, "circle": 2}
+    s = DSchematic()
+    s.info["symbol"] = "pad"
+    s.info["ports"] = [{"name": "PAD", "side": "top", "type": "electric"}]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "bondpad",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/sg13g2_bondpad.lib",
+            "sections": [],
+            "port_order": ["PAD"],
+            "params": {
+                "size": "diameter * 1e-6",
+                "shape": str(_shape_map[shape]),
+                "padtype": "0",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "bondpad",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/sg13g2_bondpad.lib",
+            "sections": [],
+            "port_order": ["PAD"],
+            "params": {
+                "size": "diameter * 1e-6",
+                "shape": str(_shape_map[shape]),
+                "padtype": "0",
+            },
+        },
+    ]
+    s.create_port(name="PAD", cross_section=_XS, x=0, y=1, orientation=90)
+    return s
+
+
+@gf.cell(schematic_function=bondpad_schematic, tags=["IHP", "bondpad"])
 def bondpad(
     shape: Literal["octagon", "square", "circle"] = "octagon",
     diameter: float = 80.0,
@@ -102,24 +150,11 @@ def bondpad(
     c.info["diameter"] = diameter
     c.info["top_metal"] = layer_top_metal
 
-    # VLSIR Simulation Metadata
-    c.info["vlsir"] = {
-        "model": "bondpad",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_bondpad.lib",
-        "port_order": ["PAD"],
-        "port_map": {"pad": "PAD"},
-        "params": {
-            "size": diameter * 1e-6,
-            "shape": {"octagon": 0, "square": 1, "circle": 2}[shape],
-            "padtype": 0,  # TODO
-        },
-    }
-
+    add_electrical_pins(c, port_pin_mapping={"pad": ["pad"]})
     return c
 
 
-@gf.cell
+@gf.cell(tags=["IHP", "bondpad", "array"])
 def bondpad_array(
     n_pads: int = 4,
     pad_pitch: float = 100.0,
@@ -177,25 +212,31 @@ def bondpad_array(
 
     # TODO: Bondpad array VLSIR Metadata
 
+    add_electrical_pins(
+        c,
+        port_pin_mapping={
+            p.name: [p.name] for p in c.ports if p.port_type == "electrical"
+        },
+    )
     return c
 
 
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK
-    from ihp.cells import fixed
-
-    PDK.activate()
-
-    # Test the components
-    c0 = fixed.bondpad()  # original
-    c1 = bondpad(shape="octagon")  # new
-    c = xor(c0, c1)
-    c.show()
-
-    # c2 = bondpad(shape="square", flip_chip=True)
-    # c2.show()
-
-    # c3 = bondpad_array(n_pads=6)
-    # c3.show()
+@gf.cell(tags=["IHP", "bondpad"])
+def CuPillarPad() -> gf.Component:
+    """Returns CuPillarPad copper pillar pad (imported from GDS)."""
+    c = gf.import_gds(PATH.gds / "CuPillarPad.gds")
+    width = 45
+    c.add_port(
+        name="e1", center=(0, 0), width=width, orientation=180, layer="TopMetal2drawing"
+    )
+    c.add_port(
+        name="e2", center=(0, 0), width=width, orientation=0, layer="TopMetal2drawing"
+    )
+    c.add_port(
+        name="e3", center=(0, 0), width=width, orientation=90, layer="TopMetal2drawing"
+    )
+    c.add_port(
+        name="e4", center=(0, 0), width=width, orientation=270, layer="TopMetal2drawing"
+    )
+    add_electrical_pins(c, port_pin_mapping={})
+    return c

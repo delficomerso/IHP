@@ -1,24 +1,38 @@
 info:
-  area_um2: 36
-  capacitance_fF: 55.142
-  length: 6
-  model: rfcmim
-  vlsir:
-    model: cap_rfcmim
-    params:
-      l: 0.0
-      w: 0.0
-    port_map:
-      MINUS: MINUS
-      PLUS: PLUS
-    port_order:
-    - PLUS
-    - MINUS
-    - bn
-    spice_lib: capacitors_mod.lib
-    spice_type: SUBCKT
-  width: 6
-name: rfcmim_W6_L6_LPPWellblock_LMMetal5drawing_LMMIMdrawing__0ebcbadb
+  area_um2: 49
+  capacitance_fF: 74.832
+  length: 7
+  model: cap_rfcmim
+  width: 7
+name: rfcmim_W7_L7_LPPWellblock_LMMetal5drawing_LMMIMdrawing__5095ef1b
+ports:
+  MINUS:
+    center:
+    - -4.36
+    - 0
+    layer: Metal5pin
+    name: MINUS
+    orientation: 180
+    port_type: electrical
+    width: 0.2
+  PLUS:
+    center:
+    - 3
+    - 0
+    layer: TopMetal1pin
+    name: PLUS
+    orientation: 0
+    port_type: electrical
+    width: 1
+  TIE_LOW:
+    center:
+    - 0
+    - -8.46
+    layer: Metal1pin
+    name: TIE_LOW
+    orientation: 0
+    port_type: electrical
+    width: 2
 settings:
   layer_activ: Activdrawing
   layer_activnoqrc: Activnoqrc
@@ -48,6 +62,6 @@ settings:
   layer_topmetal1noqrc: TopMetal1noqrc
   layer_topmetal1pin: TopMetal1pin
   layer_vmim: Vmimdrawing
-  length: 6
+  length: 7
   model: rfcmim
-  width: 6
+  width: 7

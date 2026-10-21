@@ -28,19 +28,19 @@ if TABLES.include?('topmetal2') || BEOL
   # Rule TM2.a: Min. TopMetal2 width is 2.00µm
   logger.info('Executing rule TM2.a')
   tm2_a_value = drc_rules['TM2_a'].to_f
-  tm2_a_l = topmetal2_drw.width(tm2_a_value.um, euclidian)
+  tm2_a_l = topmetal2_drw.width(tm2_a_value.um, euclidean)
   tm2_a_l.output('TM2.a', "5.25. TM2.a: Min. TopMetal2 width: #{tm2_a_value} μm.")
   tm2_a_l.forget
 
   # Rule TM2.b: Min. TopMetal2 space or notch is 2.00µm
   logger.info('Executing rule TM2.b')
   tm2_b_value = drc_rules['TM2_b'].to_f
-  tm2_b_l = topmetal2_drw.space(tm2_b_value.um, euclidian)
+  tm2_b_l = topmetal2_drw.space(tm2_b_value.um, euclidean)
   tm2_b_l.output('TM2.b', "5.25. TM2.b: Min. TopMetal2 space or notch: #{tm2_b_value} μm.")
   tm2_b_l.forget
 
   unless PRECHECK_DRC
-    # Rule TM2.bR: Min. space of TopMetal2 lines if, at least one line is 
+    # Rule TM2.bR: Min. space of TopMetal2 lines if, at least one line is
     # wider than 5.0 µm and the parallel run is more than 50.0 µm is 5.00 um
     logger.info('Executing rule TM2.bR')
     tm2_br_value = drc_rules['TM2_bR'].to_f

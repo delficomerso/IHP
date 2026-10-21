@@ -15,22 +15,22 @@
 # =========================================================================================
 
 import argparse
-import os
-from pathlib import Path
-import xml.etree.ElementTree as ET
-import logging
-import klayout.db
-from datetime import datetime, timezone
-import time
-from subprocess import check_call
-import multiprocessing as mp
 import concurrent.futures
-import traceback
-from typing import Dict, List, Set, Union, Tuple
+import logging
+import multiprocessing as mp
+import os
 import sys
+import time
+import traceback
+import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
+from pathlib import Path
+from subprocess import check_call
+
+import klayout.db
 
 
-def get_rules_with_violations(results_database: Union[str, Path]) -> Set[str]:
+def get_rules_with_violations(results_database: str | Path) -> set[str]:
     """
     Parse a KLayout RDB (Results Database) file and return a set of rule names
     that have reported violations.
@@ -100,7 +100,9 @@ def _merge_items(base_items: ET.Element, new_root: ET.Element):
             base_items.append(item)
 
 
-def _group_cells_by_base(base_cells: ET.Element) -> Dict[str, List[Tuple[ET.Element, str]]]:
+def _group_cells_by_base(
+    base_cells: ET.Element,
+) -> dict[str, list[tuple[ET.Element, str]]]:
     grouped = {}
     for cell in base_cells.findall("cell"):
         name_elem = cell.find("name")
@@ -108,7 +110,11 @@ def _group_cells_by_base(base_cells: ET.Element) -> Dict[str, List[Tuple[ET.Elem
         if name_elem is None or not name_elem.text:
             continue
         base_name = name_elem.text.strip()
-        variant = (variant_elem.text.strip() if (variant_elem is not None and variant_elem.text) else "")
+        variant = (
+            variant_elem.text.strip()
+            if (variant_elem is not None and variant_elem.text)
+            else ""
+        )
         grouped.setdefault(base_name, []).append((cell, variant))
     return grouped
 
@@ -118,8 +124,8 @@ def _rename_plain_variants(base_cells: ET.Element, base_items: ET.Element) -> No
     grouped = _group_cells_by_base(base_cells)
     rename_map = {}
 
-    for base_name, variants in grouped.items():
-        unique_variants = set(v for _, v in variants)
+    for _base_name, variants in grouped.items():
+        unique_variants = {v for _, v in variants}
         if "" in unique_variants and len(unique_variants) > 1:
             for cell, variant in variants:
                 if variant == "":
@@ -147,7 +153,7 @@ def _rename_plain_variants(base_cells: ET.Element, base_items: ET.Element) -> No
                 cell_elem.text = rename_map[cname]
 
 
-def merge_klayout_drc_reports(input_files: List[str], output_file: str):
+def merge_klayout_drc_reports(input_files: list[str], output_file: str):
     """
     Merges multiple KLayout DRC report XML files into a single XML file.
     """
@@ -183,7 +189,7 @@ def merge_klayout_drc_reports(input_files: List[str], output_file: str):
 
 
 def check_drc_results(
-    results_db_files: List[Union[str, Path]],
+    results_db_files: list[str | Path],
     run_dir: Path,
     layout_path: str,
     switches: dict,
@@ -396,7 +402,9 @@ def generate_klayout_switches(arguments, layout_path: str) -> dict:
     # Optional switches
     switches["run_mode"] = arguments.run_mode if arguments.run_mode else "deep"
     switches["precheck_drc"] = "true" if arguments.precheck_drc else "false"
-    switches["disable_extra_rules"] = "true" if arguments.disable_extra_rules else "false"
+    switches["disable_extra_rules"] = (
+        "true" if arguments.disable_extra_rules else "false"
+    )
     switches["no_feol"] = "true" if arguments.no_feol else "false"
     switches["no_beol"] = "true" if arguments.no_beol else "false"
     switches["no_offgrid"] = "true" if arguments.no_offgrid else "false"
@@ -511,7 +519,7 @@ def build_switches_string(sws: dict) -> str:
 
 def run_check(
     drc_file: str,
-    drc_tables: List[str],
+    drc_tables: list[str],
     layout_path: str,
     run_dir: Path,
     sws: dict,
@@ -552,7 +560,7 @@ def run_check(
     )
 
     sws_str = build_switches_string(new_sws)
-    sws_str += f" -rd tables=\"{' '.join(drc_tables)}\""
+    sws_str += f' -rd tables="{" ".join(drc_tables)}"'
 
     run_cmd = f"klayout -b -r '{drc_file}' {sws_str}"
     check_call(run_cmd, shell=True)
@@ -598,7 +606,9 @@ def run_parallel_run(
         )
 
     # Main table-based checks
-    table_list = args.table if args.table else get_list_of_tables(rule_deck_full_path, switches)
+    table_list = (
+        args.table if args.table else get_list_of_tables(rule_deck_full_path, switches)
+    )
     for table in table_list:
         rule_deck_files[table] = rule_deck_full_path / "ihp-sg13g2.drc"
 
@@ -633,7 +643,7 @@ def run_single_processor(
     args,
     rule_deck_full_path: Path,
     layout_path: str,
-    switches: Dict,
+    switches: dict,
     run_dir: Path,
 ) -> int:
     """
@@ -652,7 +662,7 @@ def run_single_processor(
     run_dir : Path
         Path to the output directory for this DRC run.
     """
-    result_dbs: List[str] = []
+    result_dbs: list[str] = []
 
     def run_check_by_flag(flag_enabled: bool, name: str):
         """
@@ -660,7 +670,9 @@ def run_single_processor(
         """
         if flag_enabled:
             drc_path = rule_deck_full_path / "rule_decks" / f"{name}.drc"
-            result_dbs.append(run_check(drc_path, [name], layout_path, run_dir, switches))
+            result_dbs.append(
+                run_check(drc_path, [name], layout_path, run_dir, switches)
+            )
             logging.info(f"Completed running {name.capitalize()} checks.")
 
     # Handle *_only flags (exclusive checks)
@@ -681,7 +693,15 @@ def run_single_processor(
         switches["no_beol"] = "true"
         switches["no_forbidden"] = "true"
         switches["no_pin"] = "true"
-    result_dbs.append(run_check(rule_deck_full_path / "ihp-sg13g2.drc", tables, layout_path, run_dir, switches))
+    result_dbs.append(
+        run_check(
+            rule_deck_full_path / "ihp-sg13g2.drc",
+            tables,
+            layout_path,
+            run_dir,
+            switches,
+        )
+    )
 
     # Run additional checks if requested
     run_check_by_flag(args.antenna, "antenna")
@@ -728,9 +748,13 @@ def main(run_dir: Path, args):
 
     # Choose between single-core and multi-core run
     if workers_count == 1 or args.antenna_only or args.density_only:
-        return run_single_processor(args, rule_deck_full_path, layout_path, switches, run_dir)
+        return run_single_processor(
+            args, rule_deck_full_path, layout_path, switches, run_dir
+        )
     else:
-        return run_parallel_run(args, rule_deck_full_path, layout_path, switches, run_dir)
+        return run_parallel_run(
+            args, rule_deck_full_path, layout_path, switches, run_dir
+        )
 
 
 def parse_args():
@@ -851,7 +875,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Generate a timestamped run directory name
-    now_str = datetime.now(timezone.utc).strftime("drc_run_%Y_%m_%d_%H_%M_%S")
+    now_str = datetime.now(UTC).strftime("drc_run_%Y_%m_%d_%H_%M_%S")
 
     # Determine run directory
     if args.run_dir in ["pwd", "", None]:

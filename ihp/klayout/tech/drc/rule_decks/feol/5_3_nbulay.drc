@@ -42,7 +42,7 @@ if TABLES.include?('nbulay') || FEOL
     nbl_c_value = drc_rules['NBL_c'].to_f
     nbl_c_l1 = nbl_nets.space(nbl_c_value.um, props_ne)
     nbl_c_l2 = pwell_block.interacting(nbuLay_gen_nwell)
-    nbl_c_l3 = nbl_c_l2.sep(nbuLay_gen_nwell, nbl_c_value.um, euclidian, without_touching_edges)
+    nbl_c_l3 = nbl_c_l2.sep(nbuLay_gen_nwell, nbl_c_value.um, euclidean, without_touching_edges)
     nbl_c = nbl_c_l1.join(nbl_c_l3)
     nbl_c.output('NBL.c', "5.3.NBL.c : Min. PWell width between nBuLay regions (different net) is #{nbl_c_value} um")
     nbl_c_l1.forget
@@ -55,7 +55,7 @@ if TABLES.include?('nbulay') || FEOL
     nbl_d_value = drc_rules['NBL_d'].to_f
     nbl_d_l1 = nbl_nets.sep(nwell_nets, nbl_d_value.um, props_ne)
     nbl_d_l2 = pwell_block.interacting(nwell_drw)
-    nbl_d_l3 = nbl_d_l2.sep(nbuLay_gen_nwell, nbl_d_value.um, euclidian, without_touching_edges)
+    nbl_d_l3 = nbl_d_l2.sep(nbuLay_gen_nwell, nbl_d_value.um, euclidean, without_touching_edges)
     nbl_d = nbl_d_l1.join(nbl_d_l3)
     nbl_d.output('NBL.d',
                  "5.3.NBL.d : Min. PWell width between nBuLay and NWell (different net) is #{nbl_d_value} um")

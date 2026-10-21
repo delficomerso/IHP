@@ -10,10 +10,14 @@ import math
 
 import gdsfactory as gf
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
 
 from ..tech import TECH
 from .fet_transistors import _add_rect, _even_dbu, _fix, _grid_fix
+
+_XS = "metal1_routing"
 
 
 # ---------------------------------------------------------------------------
@@ -42,8 +46,10 @@ def _metal_cont(
 
     Args:
         c: Component to add geometry to.
-        p1_x, p1_y: Start point of the line (raw coordinates).
-        p2_x, p2_y: End point of the line (raw coordinates).
+        p1_x: X coordinate of the start point of the line (raw coordinates).
+        p1_y: Y coordinate of the start point of the line (raw coordinates).
+        p2_x: X coordinate of the end point of the line (raw coordinates).
+        p2_y: Y coordinate of the end point of the line (raw coordinates).
         layer_metal: Metal layer for the covering rectangle (empty string to skip).
         layer_cont: Contact/via layer for sub-rectangles.
         width: Width of the metal strip.
@@ -878,13 +884,78 @@ def _rf_mos_core(
             port_type="electrical",
         )
 
+    add_electrical_pins(
+        c,
+        port_pin_mapping={
+            p.name: [p.name] for p in c.ports if p.port_type == "electrical"
+        },
+    )
     return c
 
 
 # ---------------------------------------------------------------------------
 # Public RF cell functions
 # ---------------------------------------------------------------------------
-@gf.cell
+def rfnmos_schematic(
+    width: float = 1.0,
+    length: float = 0.13,
+    nf: int = 1,
+    m: int = 1,
+    cnt_rows: int = 1,
+    met2_cont: bool = True,
+    gat_ring: bool = True,
+    guard_ring: str = "Yes",
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "nmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_lv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_lv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rfnmos_schematic, tags=["IHP", "mos", "lv", "rf"])
 def rfnmos(
     width: float = 1.0,
     length: float = 0.13,
@@ -937,24 +1008,69 @@ def rfnmos(
         is_pmos=False,
         is_hv=False,
     )
-    c.info["vlsir"] = {
-        "model": "sg13_lv_nmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moslv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-            "rfmode": 1,
-        },
-    }
     return c
 
 
-@gf.cell
+def rfpmos_schematic(
+    width: float = 1.0,
+    length: float = 0.13,
+    nf: int = 1,
+    m: int = 1,
+    cnt_rows: int = 1,
+    met2_cont: bool = True,
+    gat_ring: bool = True,
+    guard_ring: str = "Yes",
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "pmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_lv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_lv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rfpmos_schematic, tags=["IHP", "mos", "lv", "rf"])
 def rfpmos(
     width: float = 1.0,
     length: float = 0.13,
@@ -1007,24 +1123,69 @@ def rfpmos(
         is_pmos=True,
         is_hv=False,
     )
-    c.info["vlsir"] = {
-        "model": "sg13_lv_pmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moslv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-            "rfmode": 1,
-        },
-    }
     return c
 
 
-@gf.cell
+def rfnmos_hv_schematic(
+    width: float = 1.0,
+    length: float = 0.45,
+    nf: int = 1,
+    m: int = 1,
+    cnt_rows: int = 1,
+    met2_cont: bool = True,
+    gat_ring: bool = True,
+    guard_ring: str = "Yes",
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "nmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_hv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_hv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rfnmos_hv_schematic, tags=["IHP", "mos", "hv", "rf"])
 def rfnmos_hv(
     width: float = 1.0,
     length: float = 0.45,
@@ -1077,24 +1238,69 @@ def rfnmos_hv(
         is_pmos=False,
         is_hv=True,
     )
-    c.info["vlsir"] = {
-        "model": "sg13_hv_nmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moshv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-            "rfmode": 1,
-        },
-    }
     return c
 
 
-@gf.cell
+def rfpmos_hv_schematic(
+    width: float = 1.0,
+    length: float = 0.40,
+    nf: int = 1,
+    m: int = 1,
+    cnt_rows: int = 1,
+    met2_cont: bool = True,
+    gat_ring: bool = True,
+    guard_ring: str = "Yes",
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "pmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_hv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_hv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+                "rfmode": "1",
+            },
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=rfpmos_hv_schematic, tags=["IHP", "mos", "hv", "rf"])
 def rfpmos_hv(
     width: float = 1.0,
     length: float = 0.40,
@@ -1147,18 +1353,4 @@ def rfpmos_hv(
         is_pmos=True,
         is_hv=True,
     )
-    c.info["vlsir"] = {
-        "model": "sg13_hv_pmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moshv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-            "rfmode": 1,
-        },
-    }
     return c

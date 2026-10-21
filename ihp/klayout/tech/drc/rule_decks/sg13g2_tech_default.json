@@ -1,5 +1,5 @@
-{ 
-    "drc_rules": {    
+{
+    "drc_rules": {
         "grid": 0.005,
         "NW_a": 0.62,
         "NW_a1": 1.8,

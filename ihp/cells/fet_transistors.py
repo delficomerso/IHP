@@ -13,9 +13,13 @@ import math
 
 import gdsfactory as gf
 from gdsfactory import Component
+from gdsfactory.add_pins import add_electrical_pins
 from gdsfactory.typings import LayerSpec
+from kfactory.schematic import DSchematic
 
 from ..tech import TECH
+
+_XS = "metal1_routing"
 
 
 # ---------------------------------------------------------------------------
@@ -67,8 +71,10 @@ def _place_contacts(
     Args:
         c: Component to add contacts to.
         layer_cont: Contact layer.
-        xl, yl: Lower-left of bounding box.
-        xh, yh: Upper-right of bounding box.
+        xl: X coordinate of the lower-left corner of the bounding box.
+        yl: Y coordinate of the lower-left corner of the bounding box.
+        xh: X coordinate of the upper-right corner of the bounding box.
+        yh: Y coordinate of the upper-right corner of the bounding box.
         ox: X-direction enclosure (0 for transistor S/D contacts).
         oy: Y-direction enclosure (cont_Activ_overRec for transistor S/D).
         ws: Contact size.
@@ -499,13 +505,67 @@ def _mos_core(
         port_type="electrical",
     )
 
+    add_electrical_pins(c, port_pin_mapping={"S": ["S"], "D": ["D"], "G": ["G"]})
     return c
 
 
 # ---------------------------------------------------------------------------
 # Public cell functions
 # ---------------------------------------------------------------------------
-@gf.cell
+def nmos_schematic(
+    width: float = 0.15,
+    length: float = 0.13,
+    nf: int = 1,
+    m: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "nmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_lv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+            },
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_lv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {
+                "w": "width * 1e-6",
+                "l": "length * 1e-6",
+                "ng": "nf",
+                "m": "m",
+            },
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=nmos_schematic, tags=["IHP", "mos", "lv"])
 def nmos(
     width: float = 0.15,
     length: float = 0.13,
@@ -528,38 +588,65 @@ def nmos(
     Raises:
         ValueError: If width, length, or nf is outside allowed range.
     """
-    if width < TECH.nmos_min_width or width > TECH.nmos_max_width:
-        raise ValueError(
-            f"nmos width={width} out of range [{TECH.nmos_min_width}, {TECH.nmos_max_width}]"
-        )
     if length < TECH.nmos_min_length or length > TECH.nmos_max_length:
         raise ValueError(
             f"nmos length={length} out of range [{TECH.nmos_min_length}, {TECH.nmos_max_length}]"
         )
     if nf < 1 or nf > TECH.nmos_max_nf:
         raise ValueError(f"nmos nf={nf} out of range [1, {TECH.nmos_max_nf}]")
+    if width < TECH.nmos_min_width or width > TECH.nmos_max_width:
+        raise ValueError(
+            f"nmos width={width} out of range [{TECH.nmos_min_width}, {TECH.nmos_max_width}]"
+        )
 
     c = _mos_core(width, length, nf, is_pmos=False, is_hv=False)
-
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": "sg13_lv_nmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moslv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-        },
-    }
-
     return c
 
 
-@gf.cell
+def pmos_schematic(
+    width: float = 0.15,
+    length: float = 0.13,
+    nf: int = 1,
+    m: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "pmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_lv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf", "m": "m"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_lv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOSlv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf", "m": "m"},
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=pmos_schematic, tags=["IHP", "mos", "lv"])
 def pmos(
     width: float = 0.15,
     length: float = 0.13,
@@ -594,26 +681,53 @@ def pmos(
         raise ValueError(f"pmos nf={nf} out of range [1, {TECH.pmos_max_nf}]")
 
     c = _mos_core(width, length, nf, is_pmos=True, is_hv=False)
-
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": "sg13_lv_pmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moslv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-        },
-    }
-
     return c
 
 
-@gf.cell
+def nmos_hv_schematic(
+    width: float = 0.60,
+    length: float = 0.45,
+    nf: int = 1,
+    m: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "nmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_hv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf", "m": "m"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_hv_nmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf", "m": "m"},
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=nmos_hv_schematic, tags=["IHP", "mos", "hv"])
 def nmos_hv(
     width: float = 0.60,
     length: float = 0.45,
@@ -648,26 +762,53 @@ def nmos_hv(
         raise ValueError(f"nmos_hv nf={nf} out of range [1, {TECH.nmos_hv_max_nf}]")
 
     c = _mos_core(width, length, nf, is_pmos=False, is_hv=True)
-
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": "sg13_hv_nmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moshv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-        },
-    }
-
     return c
 
 
-@gf.cell
+def pmos_hv_schematic(
+    width: float = 0.30,
+    length: float = 0.40,
+    nf: int = 1,
+    m: int = 1,
+) -> DSchematic:
+    s = DSchematic()
+    s.info["symbol"] = "pmos"
+    s.info["ports"] = [
+        {"name": "D", "side": "top", "type": "electric"},
+        {"name": "S", "side": "bottom", "type": "electric"},
+        {"name": "G", "side": "left", "type": "electric"},
+        {"name": "B", "side": "right", "type": "electric"},
+    ]
+    s.info["models"] = [
+        {
+            "language": "spice",
+            "implementation": "NgSpice",
+            "name": "sg13_hv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/ngspice/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf", "m": "m"},
+        },
+        {
+            "language": "spectre",
+            "implementation": "VACASK",
+            "name": "sg13_hv_pmos",
+            "spice_type": "SUBCKT",
+            "library": "ihp/models/vacask/models/cornerMOShv.lib",
+            "sections": ["mos_tt", "mos_ss", "mos_ff", "mos_sf", "mos_fs"],
+            "port_order": ["D", "G", "S", "B"],
+            "params": {"w": "width * 1e-6", "l": "length * 1e-6", "ng": "nf", "m": "m"},
+        },
+    ]
+    s.create_port(name="D", cross_section=_XS, x=0, y=1, orientation=90)
+    s.create_port(name="G", cross_section=_XS, x=-1, y=0, orientation=180)
+    s.create_port(name="S", cross_section=_XS, x=0, y=-1, orientation=270)
+    s.create_port(name="B", cross_section=_XS, x=1, y=0, orientation=0)
+    return s
+
+
+@gf.cell(schematic_function=pmos_hv_schematic, tags=["IHP", "mos", "hv"])
 def pmos_hv(
     width: float = 0.30,
     length: float = 0.40,
@@ -702,34 +843,4 @@ def pmos_hv(
         raise ValueError(f"pmos_hv nf={nf} out of range [1, {TECH.pmos_hv_max_nf}]")
 
     c = _mos_core(width, length, nf, is_pmos=True, is_hv=True)
-
-    # VLSIR simulation metadata
-    c.info["vlsir"] = {
-        "model": "sg13_hv_pmos",
-        "spice_type": "SUBCKT",
-        "spice_lib": "sg13g2_moshv_mod.lib",
-        "port_order": ["d", "g", "s", "b"],
-        "port_map": {"D": "d", "G": "g", "S": "s"},
-        "params": {
-            "w": width * 1e-6,
-            "l": length * 1e-6,
-            "ng": nf,
-            "m": m,
-        },
-    }
-
     return c
-
-
-if __name__ == "__main__":
-    from gdsfactory.difftest import xor
-
-    from ihp import PDK
-    from ihp import cells2 as pycell
-
-    PDK.activate()
-
-    c0 = pycell.nmos()  # PyCell reference
-    c1 = nmos()  # Pure GDSFactory
-    c = xor(c0, c1)
-    c.show()

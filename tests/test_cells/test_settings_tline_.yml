@@ -1,18 +1,26 @@
-info:
-  model: tline
-  vlsir:
-    model: tline
-    params:
-      td: 0.0
-      z0: 50
-    port_order:
-    - p1
-    - n1
-    - p2
-    - n2
-    spice_lib: null
-    spice_type: TLINE
-name: tline_Z50_T1em09
+info: {}
+name: tline_L10_SCStopmetal2_routing_GCStopmetal1_routing_WNo_18c7e8da
+ports:
+  e1:
+    center:
+    - 0
+    - 0
+    layer: TopMetal2drawing
+    name: e1
+    orientation: 180
+    port_type: electrical
+    width: 2
+  e2:
+    center:
+    - 10
+    - 0
+    layer: TopMetal2drawing
+    name: e2
+    orientation: 0
+    port_type: electrical
+    width: 2
 settings:
-  td: 0.0
-  z0: 50
+  ground_cross_section: topmetal1_routing
+  length: 10
+  npoints: 2
+  signal_cross_section: topmetal2_routing

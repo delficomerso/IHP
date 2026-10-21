@@ -48,7 +48,7 @@ class SG13_Tech(TechImpl):
 
         techFilePath = os.path.join(os.path.dirname(__file__), jsonTechFile)
 
-        with open(techFilePath, "r") as tech_file:
+        with open(techFilePath) as tech_file:
             jsData = json.load(tech_file)
             self._techParams = jsData["techParams"]
 
@@ -85,14 +85,12 @@ class SG13_Tech(TechImpl):
                 self._layers = {}
 
                 for layerProperty in layerProperties:
-                    name = (
-                        layerProperty.getElementsByTagName("name")[0]
-                        .firstChild.nodeValue
-                    )
-                    layer, dataType = (
-                        layerProperty.getElementsByTagName("source")[0]
-                        .firstChild.nodeValue.split("/")
-                    )
+                    name = layerProperty.getElementsByTagName("name")[
+                        0
+                    ].firstChild.nodeValue
+                    layer, dataType = layerProperty.getElementsByTagName("source")[
+                        0
+                    ].firstChild.nodeValue.split("/")
                     self._layers[name] = (int(layer.strip()), int(dataType.strip()))
 
                     baseLayerNames[name.split(".")[0]] = int(layer.strip())
